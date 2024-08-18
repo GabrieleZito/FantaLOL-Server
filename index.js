@@ -4,15 +4,15 @@ const cors = require("cors");
 
 const session = require("express-session");
 
-const app = express();
-
 //DB
-const { sequelize } = require("./config/dbConnect.js");
-const { User } = require("./models/user.js");
-//sequelize.sync().then(()=>console.log("fatto")).catch(()=> console.log("NON FATTO"));
+require("./config/dbConnect.js");
+
+
+const authRouter = require("./routes/auth.js");
 
 const PORT = 3000;
 
+const app = express();
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(
@@ -30,15 +30,8 @@ app.use(
     })
 );
 
-app.get("/get", (req, res) => {
-    res.json({ msg: "CIAO" });
-});
 
-app.post("/post", async (req, res) => {
-    const jane = await User.create({ firstName: "Jane", lastName: "peppina" });
-    console.log(jane.toJSON());
 
-    res.json(jane.toJSON());
-});
+app.use("/auth", authRouter);
 
 app.listen(PORT, () => console.log("Server starting on port " + PORT));
