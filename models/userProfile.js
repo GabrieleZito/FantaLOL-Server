@@ -1,36 +1,35 @@
-const { INTEGER, STRING, DATE, TEXT, DataTypes } = require("sequelize");
-const { sequelize } = require("../config/dbConnect");
+const { INTEGER, STRING, DATE, TEXT, DataTypes, Model } = require("sequelize");
+const sequelize = require("../config/sequelize");
 const { UserAuth } = require("./userAuth");
 
-const UserProfile = sequelize.define("UserProfile", {
-    userId: {
-        type: INTEGER,
-        primaryKey: true,
-        allowNull: false,
-        references: {
-            model: UserAuth,
-            key: "id",
+class UserProfile extends Model {}
+
+UserProfile.init(
+    {
+        firstName: {
+            type: STRING,
+            defaultValue: "",
+        },
+        lastName: {
+            type: STRING,
+            defaultValue: "",
+        },
+        birthDay: {
+            type: DATE,
+            defaultValue: sequelize.literal("CURRENT_TIMESTAMP"),
+        },
+        bio: {
+            type: TEXT,
+            defaultValue: "",
+        },
+        profilePicture: {
+            type: STRING,
+            defaultValue: "",
         },
     },
-    firstName: {
-        type: STRING,
-    },
-    lastName: {
-        type: STRING,
-    },
-    birthDay: {
-        type: DataTypes.DATE,
-        defaultValue: sequelize.literal("CURRENT_TIMESTAMP"),
-    },
-    bio: {
-        type: TEXT,
-    },
-    profilePicture: {
-        type: STRING,
-    },
-});
-(async () => {
-    await UserProfile.sync();
-})();
+    {
+        sequelize,
+    }
+);
 
-module.exports = { UserProfile };
+module.exports = UserProfile;

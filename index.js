@@ -4,9 +4,21 @@ const cors = require("cors");
 
 const session = require("express-session");
 
-//DB
-require("./config/dbConnect.js");
+//DATABASE
+const sequelize = require("./config/sequelize.js");
+const { UserProfile, UserAuth } = require("./models/");
 
+sequelize.sync().then(async () => {
+    console.log("DB connected");
+    /*  const userInfo = await UserAuth.findAll({
+        where: { id: 2 },
+        include: [{ model: UserProfile }],
+    });
+    console.log(userInfo); */
+});
+
+const passport = require("passport");
+require("./strategies/local-strategy.js");
 
 const authRouter = require("./routes/auth.js");
 
@@ -30,7 +42,12 @@ app.use(
     })
 );
 
+app.get("/test", async (req, res) => {
+    //console.log(await verify("$argon2id$v=19$m=65536,t=3,p=4$IckiaHpOxaFR/03neVVFxA$dQAv1YoL52ejkqs75NYCHtzHLKi5GSuFVqIVT5yWLiE", 1231231a23))
+});
 
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use("/auth", authRouter);
 

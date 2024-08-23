@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const { UserAuth } = require("../models/userAuth.js");
-const { UserProfile } = require("../models/userProfile.js");
+const { UserAuth, UserProfile } = require("../models");
 const { signUpSchema } = require("../utils/zodSchemas.js");
 const { hashPassword } = require("../utils/misc.js");
+const passport = require("passport");
 
 router.post("/register", async (req, res) => {
     const user = signUpSchema.safeParse(req.body);
@@ -14,22 +14,14 @@ router.post("/register", async (req, res) => {
                 email: user.data.email,
                 username: user.data.username,
                 passwordHash: hashed,
-                salt: "salt",
             });
             const profile = await UserProfile.create({
-                userId: userLogin.id,
+                UserAuthId: userLogin.id,
             });
             res.status(200).json({
                 msg: "User registered",
                 email: userLogin.email,
                 username: userLogin.username,
-                firstName: profile.firstName ? profile.firstName : "",
-                lastName: profile.lastName ? profile.lastName : "",
-                birthDay: profile.birthDay ? profile.birthDay : "",
-                bio: profile.bio ? profile.bio : "",
-                profilePicture: profile.profilePicture
-                    ? profile.profilePicture
-                    : "",
             });
         } catch (e) {
             if (e.errors) {
@@ -46,6 +38,22 @@ router.post("/register", async (req, res) => {
         console.log(user.error);
         res.status(400).json({ err: "Input not valid" });
     }
+});
+
+router.post('/login', function (req, res, next){
+    passport.authenticate('local', (err, user, info) => {
+        if(err)
+          return next(err);
+        if(!user) { //in case the user is empty
+          return res.status(401).json(info);
+        }
+
+        req.login(user, (err) =>{
+            if(err) return next(err);
+
+            return res.json(req.user);
+        })
+    })(req, res, next);
 });
 
 module.exports = router;

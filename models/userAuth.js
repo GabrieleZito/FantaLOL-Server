@@ -1,38 +1,26 @@
-const { INTEGER, STRING } = require("sequelize");
-const { sequelize } = require("../config/dbConnect");
+const { INTEGER, STRING , Model} = require("sequelize");
+const  sequelize  = require("../config/sequelize.js");
 
-const UserAuth = sequelize.define(
-    "UserAuth",
+class UserAuth extends Model{}
+
+UserAuth.init(
     {
-        id: {
-            type: INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
+        email:{
+            type: STRING,
+            allowNull: false,
+        },
+        username:{
+            type: STRING,
             allowNull: false,
         },
         passwordHash: {
             type: STRING,
             allowNull: false,
-        },
-        salt: {
-            type: STRING,
-            allowNull: false,
-        },
-        email: {
-            type: STRING,
-            allowNull: false,
-            unique: true,
-        },
-        username: {
-            type: STRING,
-            allowNull: false,
-            unique: true,
-        },
+        }
     },
-    { freezeTableName: true }
-);
-(async () => {
-    await UserAuth.sync();
-})();
+    {
+        sequelize
+    }
+)
 
-module.exports = { UserAuth };
+module.exports = UserAuth
