@@ -27,7 +27,11 @@ passport.use(
 
                 return done(null, user);
             })
-            .catch((err) => done(null, false, err));
+            .catch((err) => {
+                console.log(err);
+
+                done(null, false, err);
+            });
         //console.log("dentro localstrategy");
     })
 );

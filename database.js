@@ -12,7 +12,12 @@ exports.checkUser = (username, password) => {
 
                 //console.log(user2);
                 resolve(user2);
-            } else reject({ err: "Wrong Username or password" });
+            } else {
+                const err = "Wrong Username or password";
+                console.log(err);
+
+                reject({ err });
+            }
         } else {
             console.log("Nessun utente");
         }

@@ -9,9 +9,12 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@api/developers-pandascore": "file:.api/apis/developers-pandascore",
     "argon2": "^0.40.3",
+    "axios": "^1.7.5",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-session": "^1.18.0",
     "mongodb": "^6.8.0",

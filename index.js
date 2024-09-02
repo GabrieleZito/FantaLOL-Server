@@ -1,30 +1,29 @@
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
+require("dotenv").config();
 
 const session = require("express-session");
 
 //DATABASE
 const sequelize = require("./config/sequelize.js");
-const { UserProfile, UserAuth } = require("./models/");
-
 sequelize.sync().then(async () => {
     console.log("DB connected");
-    /*  const userInfo = await UserAuth.findAll({
-        where: { id: 2 },
-        include: [{ model: UserProfile }],
-    });
-    console.log(userInfo); */
 });
+
+const axios = require("axios");
 
 const passport = require("passport");
 require("./strategies/local-strategy.js");
 
+//ROUTES
 const authRouter = require("./routes/auth.js");
+const leagueRouter = require("./routes/league.js");
 
 const PORT = 3000;
 
 const app = express();
+
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(
@@ -42,13 +41,10 @@ app.use(
     })
 );
 
-app.get("/test", async (req, res) => {
-    //console.log(await verify("$argon2id$v=19$m=65536,t=3,p=4$IckiaHpOxaFR/03neVVFxA$dQAv1YoL52ejkqs75NYCHtzHLKi5GSuFVqIVT5yWLiE", 1231231a23))
-});
-
 app.use(passport.initialize());
 app.use(passport.session());
 
 app.use("/auth", authRouter);
+app.use("/league", leagueRouter);
 
 app.listen(PORT, () => console.log("Server starting on port " + PORT));
