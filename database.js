@@ -20,6 +20,7 @@ exports.checkUser = (username, password) => {
             }
         } else {
             console.log("Nessun utente");
+            reject({err: "Nessun Utente"})
         }
     });
 };
@@ -32,19 +33,20 @@ exports.getUserById = (id) => {
         });
         if (userInfo) {
             console.log("USERINFO");
-            console.log(userInfo[0].dataValues.UserProfile);
+            //console.log(userInfo[0].dataValues.UserProfile);
             const user = {
                 id: userInfo[0].dataValues.id,
                 email: userInfo[0].dataValues.email,
                 username: userInfo[0].dataValues.username,
                 firstName: userInfo[0].dataValues.UserProfile.firstName,
-                lastname: userInfo[0].dataValues.UserProfile.lastname,
+                lastName: userInfo[0].dataValues.UserProfile.lastName,
                 birthDay: userInfo[0].dataValues.UserProfile.birthDay,
                 bio: userInfo[0].dataValues.UserProfile.bio,
                 profilePicture:
                     userInfo[0].dataValues.UserProfile.profilePicture,
             };
-
+            //console.log(user);
+            
             resolve(user);
         }
         reject({ err: "Error retrieving userData" });

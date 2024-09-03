@@ -15,6 +15,8 @@ router.get("/tournaments/currentTournaments", async (req, res) => {
 });
 
 router.get("/tournaments/nextTournaments", async (req, res) => {
+    //console.log(req.user);
+    
     pandascore.auth(process.env.PANDASCORE_API);
     pandascore
         .get_lol_tournaments_upcoming()

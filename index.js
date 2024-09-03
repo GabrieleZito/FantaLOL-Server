@@ -19,6 +19,7 @@ require("./strategies/local-strategy.js");
 //ROUTES
 const authRouter = require("./routes/auth.js");
 const leagueRouter = require("./routes/league.js");
+const usersRouter = require("./routes/users.js");
 
 const PORT = 3000;
 
@@ -46,5 +47,6 @@ app.use(passport.session());
 
 app.use("/auth", authRouter);
 app.use("/league", leagueRouter);
+app.use("/users", usersRouter);
 
 app.listen(PORT, () => console.log("Server starting on port " + PORT));

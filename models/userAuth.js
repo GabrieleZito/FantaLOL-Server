@@ -1,26 +1,28 @@
-const { INTEGER, STRING , Model} = require("sequelize");
-const  sequelize  = require("../config/sequelize.js");
+const { INTEGER, STRING, Model } = require("sequelize");
+const sequelize = require("../config/sequelize.js");
 
-class UserAuth extends Model{}
+class UserAuth extends Model {}
 
 UserAuth.init(
     {
-        email:{
+        email: {
             type: STRING,
             allowNull: false,
+            unique: true,
         },
-        username:{
+        username: {
             type: STRING,
             allowNull: false,
+            unique: true,
         },
         passwordHash: {
             type: STRING,
             allowNull: false,
-        }
+        },
     },
     {
-        sequelize
+        sequelize,
     }
-)
+);
 
-module.exports = UserAuth
+module.exports = UserAuth;

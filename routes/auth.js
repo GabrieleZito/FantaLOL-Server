@@ -22,6 +22,7 @@ router.post("/register", async (req, res) => {
                 msg: "User registered",
                 email: userLogin.email,
                 username: userLogin.username,
+                id: userLogin.id,
             });
         } catch (e) {
             if (e.errors) {
@@ -40,20 +41,26 @@ router.post("/register", async (req, res) => {
     }
 });
 
-router.post('/login', function (req, res, next){
-    passport.authenticate('local', (err, user, info) => {
-        if(err)
-          return next(err);
-        if(!user) { //in case the user is empty
-          return res.status(401).json(info);
+router.post("/login", function (req, res, next) {
+    passport.authenticate("local", (err, user, info) => {
+        if (err) return next(err);
+        if (!user) {
+            //in case the user is empty
+            return res.status(401).json(info);
         }
 
-        req.login(user, (err) =>{
-            if(err) return next(err);
+        req.login(user, (err) => {
+            if (err) return next(err);
 
             return res.json(req.user);
-        })
+        });
     })(req, res, next);
+});
+
+router.delete("/logout", (req, res) => {
+    req.logout(() => {
+        res.end();
+    });
 });
 
 module.exports = router;
