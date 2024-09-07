@@ -18,11 +18,14 @@ router.post("/register", async (req, res) => {
             const profile = await UserProfile.create({
                 UserAuthId: userLogin.id,
             });
-            res.status(200).json({
-                msg: "User registered",
-                email: userLogin.email,
-                username: userLogin.username,
-                id: userLogin.id,
+            req.login(profile, (err) => {
+                if (err) return next(err);
+                return res.status(200).json({
+                    msg: "User registered",
+                    email: userLogin.email,
+                    username: userLogin.username,
+                    id: userLogin.id,
+                });
             });
         } catch (e) {
             if (e.errors) {
