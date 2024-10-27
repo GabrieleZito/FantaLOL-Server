@@ -29,17 +29,17 @@ router.post("/register", async (req, res) => {
             });
         } catch (e) {
             if (e.errors) {
-                console.log(e.errors[0].message);
+                //console.log(e.errors[0].message);
                 res.status(400).json({ err: e.errors[0].message });
             } else {
-                console.log(e);
+                //console.log(e);
                 res.status(400).json({ err: e });
             }
         }
 
         //res.json(user.data);
     } else {
-        console.log(user.error);
+        //console.log(user.error);
         res.status(400).json({ err: "Input not valid" });
     }
 });

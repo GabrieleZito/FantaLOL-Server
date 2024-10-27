@@ -1,7 +1,9 @@
 const express = require("express");
 const { UserProfile, UserAuth, Friendships } = require("../models");
-const { Op } = require("sequelize");
+const { Op, QueryTypes } = require("sequelize");
+const sequelize = require("../config/sequelize");
 const router = express.Router();
+const db = require("../database.js");
 
 const isLoggedIn = (req, res, next) => {
     if (req.isAuthenticated()) return next();
@@ -56,32 +58,39 @@ router.get("/notifications", isLoggedIn, async (req, res) => {
 
 router.get("/friend-requests", isLoggedIn, async (req, res) => {
     const id = req.user.id;
-    try {
-        const pending = await Friendships.findAll({
-            where: {
-                status: "pending",
-                FriendId: id,
-            },
-        });
+    console.log(id);
 
-        const users = await Promise.all(
-            pending.map(
-                async (p) =>
-                    await UserProfile.findOne({
-                        attributes: ["profilePicture"],
-                        include: {
-                            model: UserAuth,
-                            attributes: ["username"],
-                        },
-                        where: {
-                            id: p.dataValues.id,
-                        },
-                    })
-            )
-        );
+    try {
+        const users = await db.getFriendRequests(id);
         console.log(users);
 
         res.json(users);
+    } catch (e) {
+        res.status(400).json({ err: e });
+    }
+});
+
+router.post("/acceptFriend", isLoggedIn, async (req, res) => {
+    const idUser = req.user.id;
+    const idFriend = req.body.id;
+    try {
+        const x = await db.acceptFriendRequest(idUser, idFriend);
+        res.json(x);
+    } catch (error) {
+        res.status(400).json({ err: error });
+    }
+
+    console.log(idFriend);
+});
+
+router.get("/friends", isLoggedIn, async (req, res) => {
+    const id = req.user.id;
+    
+    try {
+        const friends = await db.getFriends(id);
+        console.log(friends);
+
+        res.json(friends);
     } catch (e) {
         res.status(400).json({ err: e });
     }
