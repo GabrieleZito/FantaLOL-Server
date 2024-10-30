@@ -1,7 +1,14 @@
-const { UserProfile, UserAuth, Friendships } = require("./models/");
+const {
+    UserProfile,
+    UserAuth,
+    Friendships,
+    Leaderboards,
+    Partecipations,
+} = require("./models/");
 const { verifyPassword } = require("./utils/misc");
 const sequelize = require("./config/sequelize");
 const { Op, QueryTypes } = require("sequelize");
+const { model } = require("mongoose");
 
 exports.checkUser = (username, password) => {
     return new Promise(async (resolve, reject) => {
@@ -111,7 +118,10 @@ exports.getFriends = async (id) => {
                         where: {
                             id: friendId,
                         },
-                        include: { model: UserAuth, attributes: {exclude: ["passwordHash"]} },
+                        include: {
+                            model: UserAuth,
+                            attributes: { exclude: ["passwordHash"] },
+                        },
                     });
                     console.log(friend);
 
@@ -121,6 +131,67 @@ exports.getFriends = async (id) => {
             console.log(friends);
             return friends;
         }
+    } catch (error) {
+        throw error;
+    }
+};
+
+exports.createLeaderboard = async (data) => {
+    try {
+        const leaderboard = await Leaderboards.create({
+            name: data.name,
+            private: data.private,
+            fee: data.fee,
+            max_coins: data.coins,
+            createdBy: data.idUser,
+            tournamentId: 1,
+        });
+        const part = await Partecipations.create({
+            coins: leaderboard.max_coins,
+            score: 0,
+            UserProfileId: data.idUser,
+            LeaderboardId: leaderboard.id,
+        });
+        return { leaderboard, part };
+    } catch (error) {
+        console.log(error);
+
+        throw error;
+    }
+};
+
+exports.getLeaderboard = async (id) => {
+    try {
+        const lead = await Leaderboards.findOne({
+            where: {
+                id: id,
+            },
+            include: {
+                model: UserProfile,
+                as: "Partecipate",
+                include: {
+                    model: UserAuth,
+                    attributes: ["username"],
+                },
+            },
+        });
+        //console.log(lead);
+        return lead;
+    } catch (error) {
+        throw error;
+    }
+};
+
+exports.getUserLeaderboards = async (userId) => {
+    try {
+        const data = await Leaderboards.findAll({
+            where: {
+                createdBy: userId,
+            },
+        });
+        //console.log(data);
+        
+        return data;
     } catch (error) {
         throw error;
     }

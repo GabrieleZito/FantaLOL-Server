@@ -1,6 +1,5 @@
 const { DataTypes, Model } = require("sequelize");
 const sequelize = require("../config/sequelize.js");
-const UserProfile = require("./userProfile.js");
 
 class Friendships extends Model {}
 

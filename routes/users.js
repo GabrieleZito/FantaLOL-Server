@@ -1,7 +1,5 @@
 const express = require("express");
 const { UserProfile, UserAuth, Friendships } = require("../models");
-const { Op, QueryTypes } = require("sequelize");
-const sequelize = require("../config/sequelize");
 const router = express.Router();
 const db = require("../database.js");
 
