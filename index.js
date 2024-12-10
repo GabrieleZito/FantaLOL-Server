@@ -11,6 +11,7 @@ sequelize.sync().then(async () => {
     console.log("DB connected");
 });
 
+
 const axios = require("axios");
 
 const passport = require("passport");

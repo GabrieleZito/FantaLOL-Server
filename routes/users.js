@@ -1,5 +1,5 @@
 const express = require("express");
-const { UserProfile, UserAuth, Friendships } = require("../models");
+const { UserProfile, UserAuth, Friendships, Invites } = require("../models");
 const router = express.Router();
 const db = require("../database.js");
 
@@ -15,7 +15,7 @@ router.post("/:username/request", isLoggedIn, async (req, res) => {
             username: username,
         },
     });
-    console.log(req.user);
+    //console.log(req.user);
 
     if (!friend) res.status(400).json({ err: "This user doesn't exist" });
     else {
@@ -30,7 +30,7 @@ router.post("/:username/request", isLoggedIn, async (req, res) => {
                 });
                 res.json({ msg: "Request sent" });
             } catch (e) {
-                console.log("CIAO");
+                //console.log("CIAO");
                 res.status(400).json({ err: "Request already sent" });
             }
         }
@@ -40,15 +40,9 @@ router.post("/:username/request", isLoggedIn, async (req, res) => {
 router.get("/notifications", isLoggedIn, async (req, res) => {
     const id = req.user.id;
     try {
-        const pending = await Friendships.findAll({
-            where: {
-                status: "pending",
-                FriendId: id,
-            },
-        });
-        //console.log(pending);
+        const result = await db.getNotifications(id);
 
-        res.json(pending.length);
+        res.json(result);
     } catch (e) {
         res.status(400).json({ err: e });
     }
@@ -56,11 +50,11 @@ router.get("/notifications", isLoggedIn, async (req, res) => {
 
 router.get("/friend-requests", isLoggedIn, async (req, res) => {
     const id = req.user.id;
-    console.log(id);
+    //console.log(id);
 
     try {
         const users = await db.getFriendRequests(id);
-        console.log(users);
+        //console.log(users);
 
         res.json(users);
     } catch (e) {
@@ -78,20 +72,58 @@ router.post("/acceptFriend", isLoggedIn, async (req, res) => {
         res.status(400).json({ err: error });
     }
 
-    console.log(idFriend);
+    //console.log(idFriend);
 });
 
 router.get("/friends", isLoggedIn, async (req, res) => {
     const id = req.user.id;
-    
+
     try {
         const friends = await db.getFriends(id);
-        console.log(friends);
+        //console.log(friends);
 
         res.json(friends);
     } catch (e) {
         res.status(400).json({ err: e });
     }
 });
+
+router.post("/send-invite", isLoggedIn, async (req, res) => {
+    const id = req.user.id;
+
+    try {
+        console.log({ body: req.body, id: id });
+        const result = await db.sendInvite({ body: req.body, id: id });
+        //console.log(result);
+        res.json(result);
+    } catch (error) {
+        console.log(error);
+
+        res.status(400).json({ err: error });
+    }
+});
+
+router.get("/invites", isLoggedIn, async (req, res) => {
+    const id = req.user.id;
+    try {
+        const invites = await db.getInvites(id);
+        res.json(invites);
+    } catch (err) {
+        res.status(400).json({ err });
+    }
+});
+
+router.post("/accept-invite", isLoggedIn, async (req, res) => {
+    const id = req.body.id;
+    console.log(id);
+
+    try {
+        const result = await db.acceptInvite(id);
+        res.json(result)
+    } catch (error) {
+        res.status(400).json({err: error})
+    }
+});
+
 
 module.exports = router;

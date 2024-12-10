@@ -4,10 +4,11 @@ const {
     Friendships,
     Leaderboards,
     Partecipations,
+    Invites,
 } = require("./models/");
 const { verifyPassword } = require("./utils/misc");
 const sequelize = require("./config/sequelize");
-const { Op, QueryTypes } = require("sequelize");
+const { Op, QueryTypes, where } = require("sequelize");
 const { model } = require("mongoose");
 
 exports.checkUser = (username, password) => {
@@ -28,7 +29,7 @@ exports.checkUser = (username, password) => {
                 reject({ err });
             }
         } else {
-            console.log("Nessun utente");
+            //console.log("Nessun utente");
             reject({ err: "Nessun Utente" });
         }
     });
@@ -87,19 +88,19 @@ exports.acceptFriendRequest = async (id1, id2) => {
             },
         });
         if (row != null) {
-            console.log(row);
+            //console.log(row);
             row.status = "accepted";
             await row.save();
             return { msg: "Friend request Accepted" };
         } else {
-            console.log("ERRORE");
+            //console.log("ERRORE");
             throw Error("There was a problem with the request");
         }
     } catch (e) {
         throw e;
     }
 };
-
+//TODO togliere informazioni sensibili
 exports.getFriends = async (id) => {
     try {
         const friendships = await Friendships.findAll({
@@ -123,12 +124,12 @@ exports.getFriends = async (id) => {
                             attributes: { exclude: ["passwordHash"] },
                         },
                     });
-                    console.log(friend);
+                    //console.log(friend);
 
                     return friend;
                 })
             );
-            console.log(friends);
+            //console.log(friends);
             return friends;
         }
     } catch (error) {
@@ -154,7 +155,7 @@ exports.createLeaderboard = async (data) => {
         });
         return { leaderboard, part };
     } catch (error) {
-        console.log(error);
+        //console.log(error);
 
         throw error;
     }
@@ -190,8 +191,104 @@ exports.getUserLeaderboards = async (userId) => {
             },
         });
         //console.log(data);
-        
+
         return data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+exports.sendInvite = async (data) => {
+    try {
+        console.error("UserProfileId: " + data.id);
+        console.error("InviteId: " + data.body.friend.id);
+        console.error("LeaderboardId: " + data.body.idLeaderboard);
+        const invite = await Invites.create({
+            UserProfileId: data.id,
+            InvitedUserId: data.body.friend.id,
+            status: "pending",
+            LeaderboardId: data.body.idLeaderboard,
+        });
+        return invite;
+    } catch (error) {
+        throw error;
+    }
+};
+
+exports.getNotifications = async (userId) => {
+    try {
+        const pending1 = await Friendships.findAll({
+            where: {
+                status: "pending",
+                FriendId: userId,
+            },
+        });
+        const pending2 = await Invites.findAll({
+            where: {
+                status: "pending",
+                InvitedUserId: userId,
+            },
+        });
+        return pending1.length + pending2.length;
+    } catch (err) {
+        throw err;
+    }
+};
+
+exports.getInvites = async (userId) => {
+    try {
+        //console.log(userId);
+
+        const invites = await Invites.findAll({
+            where: {
+                InvitedUserId: userId,
+                status: "pending",
+            },
+            attributes: ["id", "status", "LeaderboardId", "UserProfileId"],
+            include: {
+                model: Leaderboards,
+                attributes: ["id", "name", "fee", "createdBy"],
+            },
+        });
+        //console.log(invites);
+
+        return invites;
+    } catch (error) {
+        throw error;
+    }
+};
+
+exports.acceptInvite = async (id) => {
+    try {
+        const invite = await Invites.findByPk(id);
+        console.log(invite);
+        const lead = await Leaderboards.findByPk(invite.LeaderboardId);
+        const part = await Partecipations.create({
+            coins: lead.max_coins,
+            UserProfileId: invite.InvitedUserId,
+            LeaderboardId: invite.LeaderboardId,
+        });
+        const inv = await invite.update({ status: "accepted" });
+        return invite;
+    } catch (error) {
+        throw error;
+    }
+};
+
+exports.getFriendLeaderboards = async (id) => {
+    try {
+        const user = await UserProfile.findByPk(id);
+        const leads = UserProfile.findAll({
+            where: {
+                id: id
+            },
+            include: {
+                model: Leaderboards,
+                as: "Partecipate"
+            },
+        });
+        //console.log(user);
+        return leads;
     } catch (error) {
         throw error;
     }
