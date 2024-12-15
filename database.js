@@ -1,15 +1,7 @@
-const {
-    UserProfile,
-    UserAuth,
-    Friendships,
-    Leaderboards,
-    Partecipations,
-    Invites,
-} = require("./models/");
+const { UserProfile, UserAuth, Friendships, Leaderboards, Partecipations, Invites } = require("./models/");
 const { verifyPassword } = require("./utils/misc");
 const sequelize = require("./config/sequelize");
 const { Op, QueryTypes, where } = require("sequelize");
-const { model } = require("mongoose");
 
 exports.checkUser = (username, password) => {
     return new Promise(async (resolve, reject) => {
@@ -52,8 +44,7 @@ exports.getUserById = (id) => {
                 lastName: userInfo[0].dataValues.UserProfile.lastName,
                 birthDay: userInfo[0].dataValues.UserProfile.birthDay,
                 bio: userInfo[0].dataValues.UserProfile.bio,
-                profilePicture:
-                    userInfo[0].dataValues.UserProfile.profilePicture,
+                profilePicture: userInfo[0].dataValues.UserProfile.profilePicture,
             };
             //console.log(user);
 
@@ -113,8 +104,7 @@ exports.getFriends = async (id) => {
         if (friendships != null && friendships.length > 0) {
             const friends = Promise.all(
                 friendships.map(async (f) => {
-                    const friendId =
-                        id == f.UserProfileId ? f.FriendId : f.UserProfileId;
+                    const friendId = id == f.UserProfileId ? f.FriendId : f.UserProfileId;
                     const friend = await UserProfile.findOne({
                         where: {
                             id: friendId,
@@ -275,20 +265,29 @@ exports.acceptInvite = async (id) => {
     }
 };
 
+//TODO togliere info non necessarie da UserProfile
 exports.getFriendLeaderboards = async (id) => {
     try {
         const user = await UserProfile.findByPk(id);
-        const leads = UserProfile.findAll({
+        const leads = await UserProfile.findAll({
             where: {
-                id: id
+                id: id,
             },
             include: {
                 model: Leaderboards,
-                as: "Partecipate"
+                as: "Partecipate",
+                where: {
+                    createdBy: {
+                        [Op.ne]: id,
+                    },
+                },
             },
         });
-        //console.log(user);
-        return leads;
+        if (leads.length > 0) {
+            return leads[0].Partecipate;
+        } else {
+            return [];
+        }
     } catch (error) {
         throw error;
     }

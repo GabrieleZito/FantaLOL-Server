@@ -41,21 +41,15 @@ router.get("/tournaments/lec", async (req, res) => {
     let result = {};
     if (!fs.existsSync(__dirname + "/../liquipedia/lec_splits.json")) {
         const splits = await getLecTournaments();
-        fs.writeFile(
-            __dirname + "/../liquipedia/lec_splits.json",
-            JSON.stringify({ date: currentDate, data: splits }),
-            (err) => {
-                if (err) console.log(err);
-            }
-        );
+        fs.writeFile(__dirname + "/../liquipedia/lec_splits.json", JSON.stringify({ date: currentDate, data: splits }), (err) => {
+            if (err) console.log(err);
+        });
 
         Object.assign(result, { splits: splits });
         //console.log("DEntro if");
     } else {
         const today = new Date();
-        let data = fs.readFileSync(
-            __dirname + "/../liquipedia/lec_splits.json"
-        );
+        let data = fs.readFileSync(__dirname + "/../liquipedia/lec_splits.json");
         //console.log("dentro else");
         data = JSON.parse(data);
         const giorno = new Date(data.date);
@@ -63,8 +57,8 @@ router.get("/tournaments/lec", async (req, res) => {
         //console.log("today : " + today);
 
         if (
-            giorno.getFullYear() < today.getFullYear() &&
-            giorno.getMonth() + 1 < today.getMonth() + 1 &&
+            giorno.getFullYear() < today.getFullYear() ||
+            giorno.getMonth() + 1 < today.getMonth() + 1 ||
             giorno.getDate() < today.getDate()
         ) {
             const splits = await getLecTournaments();
@@ -98,9 +92,7 @@ router.get("/tournaments/lec", async (req, res) => {
         Object.assign(result, { participants: participants });
     } else {
         console.log("dentro 2");
-        let file = fs.readFileSync(
-            __dirname + "/../liquipedia/lec_participants.json"
-        );
+        let file = fs.readFileSync(__dirname + "/../liquipedia/lec_participants.json");
         file = JSON.parse(file);
         const giorno = new Date(file.date);
         console.log(file.date);
@@ -130,9 +122,7 @@ router.get("/tournaments/lec", async (req, res) => {
         }
     }
     const result2 = result.splits.map((x) => {
-        x.participants = result.participants.filter(
-            (y) => x.pagename == y.pagename
-        );
+        x.participants = result.participants.filter((y) => x.pagename == y.pagename);
         return x;
     });
     res.json(result2);

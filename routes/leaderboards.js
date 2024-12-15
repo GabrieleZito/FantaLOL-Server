@@ -45,11 +45,13 @@ router.get("/user/:id", isLoggedIn, async (req, res) => {
 router.get("/user/:id/friends", isLoggedIn, async (req, res) => {
     const { id } = req.params;
     console.log(id);
-    
+
     try {
         const result = await db.getFriendLeaderboards(id);
         res.json(result);
     } catch (error) {
+        console.log(error);
+
         res.status(400).json({ err: error });
     }
 });

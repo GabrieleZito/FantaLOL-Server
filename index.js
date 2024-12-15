@@ -2,7 +2,6 @@ const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
 require("dotenv").config();
-
 const session = require("express-session");
 
 //DATABASE
@@ -10,9 +9,6 @@ const sequelize = require("./config/sequelize.js");
 sequelize.sync().then(async () => {
     console.log("DB connected");
 });
-
-
-const axios = require("axios");
 
 const passport = require("passport");
 require("./strategies/local-strategy.js");

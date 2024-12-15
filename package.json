@@ -10,6 +10,7 @@
   "description": "",
   "dependencies": {
     "@api/developers-pandascore": "file:.api/apis/developers-pandascore",
+    "@socket.io/admin-ui": "^0.5.1",
     "argon2": "^0.40.3",
     "axios": "^1.7.5",
     "bcrypt": "^5.1.1",
@@ -24,6 +25,7 @@
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "sequelize": "^6.37.3",
+    "socket.io": "^4.8.1",
     "sqlite3": "^5.1.7",
     "zod": "^3.23.8"
   }
