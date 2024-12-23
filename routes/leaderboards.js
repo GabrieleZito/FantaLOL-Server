@@ -32,10 +32,23 @@ router.get("/:id", isLoggedIn, async (req, res) => {
     }
 });
 
+router.get("/:id/user", isLoggedIn, async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const result = await db.getInfoLeaderboardForUser(id, req.user.id);
+        res.json(result);
+    } catch (err) {
+        res.status(400).json({ err });
+    }
+});
+
 router.get("/user/:id", isLoggedIn, async (req, res) => {
     const { id } = req.params;
     try {
         const result = await db.getUserLeaderboards(id);
+        //console.log(result);
+
         res.json(result);
     } catch (error) {
         res.status(400).json({ error });
@@ -44,7 +57,7 @@ router.get("/user/:id", isLoggedIn, async (req, res) => {
 
 router.get("/user/:id/friends", isLoggedIn, async (req, res) => {
     const { id } = req.params;
-    console.log(id);
+    //console.log(id);
 
     try {
         const result = await db.getFriendLeaderboards(id);

@@ -2,7 +2,7 @@ const { default: axios } = require("axios");
 const express = require("express");
 const router = express.Router();
 const pandascore = require("@api/developers-pandascore");
-const { getLecTournaments, getLecParticipants } = require("../utils/api");
+const { getLecTournaments, getLecParticipants, getLecPlayers, getPlayerByName } = require("../utils/api");
 const fs = require("fs");
 
 const current = "https://api.pandascore.co/lol/tournaments/running";
@@ -33,8 +33,7 @@ router.get("/tournaments/nextTournaments", async (req, res) => {
 });
 
 //TODO scaricare e salvare le immagini
-//TODO salvare in locale json dei tournament e tutte le info
-//TODO trovare come fare refetchare le info ogni tot
+//TODO spostare il refetch in un posto più generico
 router.get("/tournaments/lec", async (req, res) => {
     console.log("current date:" + currentDate);
 
@@ -125,6 +124,25 @@ router.get("/tournaments/lec", async (req, res) => {
         x.participants = result.participants.filter((y) => x.pagename == y.pagename);
         return x;
     });
+
+    //TODO aggiungere constrolli su data
+    if (!fs.existsSync(__dirname + "/../liquipedia/lec_players.json")) {
+        let playersNames = await getLecPlayers();
+        let players = [];
+        for (let i = 0; i < playersNames.length; i++) {
+            const p = playersNames[i];
+            let player = await getPlayerByName(p);
+            players.push(player);
+        }
+        fs.writeFile(
+            __dirname + "/../liquipedia/lec_players.json",
+            JSON.stringify({ date: currentDate, data: players }),
+            (err) => {
+                if (err) console.log(err);
+            }
+        );
+    }
+
     res.json(result2);
 
     //const teams = await getLecPartecipants();

@@ -1,4 +1,4 @@
-const { UserProfile, UserAuth, Friendships, Leaderboards, Partecipations, Invites } = require("./models/");
+const { UserProfile, UserAuth, Friendships, Leaderboards, Partecipations, Invites, Teams } = require("./models/");
 const { verifyPassword } = require("./utils/misc");
 const sequelize = require("./config/sequelize");
 const { Op, QueryTypes, where } = require("sequelize");
@@ -137,11 +137,13 @@ exports.createLeaderboard = async (data) => {
             createdBy: data.idUser,
             tournamentId: 1,
         });
+        const team = await Teams.create({});
         const part = await Partecipations.create({
             coins: leaderboard.max_coins,
             score: 0,
             UserProfileId: data.idUser,
             LeaderboardId: leaderboard.id,
+            TeamId: team.id,
         });
         return { leaderboard, part };
     } catch (error) {
@@ -160,6 +162,31 @@ exports.getLeaderboard = async (id) => {
             include: {
                 model: UserProfile,
                 as: "Partecipate",
+                include: {
+                    model: UserAuth,
+                    attributes: ["username"],
+                },
+            },
+        });
+        //console.log(lead);
+        return lead;
+    } catch (error) {
+        throw error;
+    }
+};
+
+exports.getInfoLeaderboardForUser = async (leadId, userId) => {
+    try {
+        const lead = await Leaderboards.findOne({
+            where: {
+                id: leadId,
+            },
+            include: {
+                model: UserProfile,
+                as: "Partecipate",
+                where: {
+                    id: userId,
+                },
                 include: {
                     model: UserAuth,
                     attributes: ["username"],
@@ -251,12 +278,14 @@ exports.getInvites = async (userId) => {
 exports.acceptInvite = async (id) => {
     try {
         const invite = await Invites.findByPk(id);
-        console.log(invite);
+        //console.log(invite);
         const lead = await Leaderboards.findByPk(invite.LeaderboardId);
+        const team = await Teams.create({});
         const part = await Partecipations.create({
             coins: lead.max_coins,
             UserProfileId: invite.InvitedUserId,
             LeaderboardId: invite.LeaderboardId,
+            TeamId: team.id,
         });
         const inv = await invite.update({ status: "accepted" });
         return invite;
@@ -290,5 +319,22 @@ exports.getFriendLeaderboards = async (id) => {
         }
     } catch (error) {
         throw error;
+    }
+};
+
+//TODO da aggiornare
+//TODO problema se non betta nessuno
+exports.assignPlayer = async (leadId, userId, player) => {
+    try {
+        const part = await Partecipations.findOne({
+            where: {
+                UserProfileId: userId,
+                LeaderboardId: leadId,
+            },
+        });
+        const team = await Teams.findByPk(part.TeamId);
+        const updated = await team.update({ mid1: player });
+    } catch (err) {
+        throw err;
     }
 };
