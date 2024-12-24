@@ -6,7 +6,7 @@ const session = require("express-session");
 
 //DATABASE
 const sequelize = require("./config/sequelize.js");
-sequelize.sync().then(async () => {
+sequelize.sync({ force: false }).then(async () => {
     console.log("DB connected");
 });
 

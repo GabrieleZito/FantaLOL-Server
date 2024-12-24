@@ -1,5 +1,5 @@
 const express = require("express");
-const { UserProfile, UserAuth, Friendships, Invites } = require("../models");
+const { UserProfile, Friendships } = require("../models");
 const router = express.Router();
 const db = require("../database.js");
 
@@ -10,7 +10,7 @@ const isLoggedIn = (req, res, next) => {
 
 router.post("/:username/request", isLoggedIn, async (req, res) => {
     const { username } = req.params;
-    const friend = await UserAuth.findOne({
+    const friend = await UserProfile.findOne({
         where: {
             username: username,
         },
@@ -119,11 +119,10 @@ router.post("/accept-invite", isLoggedIn, async (req, res) => {
 
     try {
         const result = await db.acceptInvite(id);
-        res.json(result)
+        res.json(result);
     } catch (error) {
-        res.status(400).json({err: error})
+        res.status(400).json({ err: error });
     }
 });
-
 
 module.exports = router;

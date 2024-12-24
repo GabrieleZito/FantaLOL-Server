@@ -1,14 +1,14 @@
-const UserAuth = require("./userAuth");
+const sequelize = require("../config/sequelize");
 const UserProfile = require("./userProfile");
 const Friendships = require("./friendships");
 const Leaderboards = require("./leaderboards");
 const Partecipations = require("./partecipations");
 const Teams = require("./teams");
-const sequelize = require("../config/sequelize");
 const Invites = require("./invites");
+const Players = require("./players");
+const Auctions = require("./auctions");
+const Bids = require("./bids");
 
-UserAuth.hasOne(UserProfile, { onDelete: "cascade" });
-UserProfile.belongsTo(UserAuth);
 UserProfile.belongsToMany(UserProfile, { through: Friendships, as: "Friends" });
 UserProfile.belongsToMany(Leaderboards, {
     through: Partecipations,
@@ -21,24 +21,38 @@ Leaderboards.belongsToMany(UserProfile, {
 Leaderboards.belongsTo(UserProfile, { foreignKey: "createdBy", as: "Created" });
 UserProfile.hasOne(Leaderboards, { foreignKey: "createdBy", as: "Created" });
 Partecipations.belongsTo(Teams);
-/* UserProfile.belongsToMany(UserProfile, {
-    through: Invites,
-    as: "Invite",
-});*/
 Leaderboards.hasMany(Invites);
-Invites.belongsTo(Leaderboards); 
-UserProfile.hasMany(Invites)
-Invites.belongsTo(UserProfile)
-UserProfile.hasMany(Invites, {foreignKey: "InvitedUserId"})
-Invites.belongsTo(UserProfile)
+Invites.belongsTo(Leaderboards);
+UserProfile.hasMany(Invites);
+Invites.belongsTo(UserProfile);
+UserProfile.hasMany(Invites, { foreignKey: "InvitedUserId" });
+Invites.belongsTo(UserProfile);
+Teams.hasMany(Players);
+Players.belongsTo(Teams);
 
+Players.hasOne(Auctions);
+Auctions.belongsTo(Players);
+
+UserProfile.hasOne(Auctions);
+Auctions.belongsTo(UserProfile);
+
+Auctions.hasOne(Bids);
+Bids.belongsTo(Auctions);
+
+Leaderboards.hasOne(Auctions);
+Auctions.belongsTo(Leaderboards);
+
+UserProfile.hasOne(Bids);
+Bids.belongsTo(UserProfile);
 
 module.exports = {
-    UserAuth,
     UserProfile,
     Friendships,
     Leaderboards,
     Partecipations,
     Teams,
-    Invites
+    Invites,
+    Auctions,
+    Players,
+    Bids,
 };

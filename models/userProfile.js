@@ -1,6 +1,5 @@
-const { INTEGER, STRING, DATE, TEXT, DataTypes, Model } = require("sequelize");
+const { STRING, DATE, TEXT, Model } = require("sequelize");
 const sequelize = require("../config/sequelize");
-const { UserAuth } = require("./userAuth");
 
 class UserProfile extends Model {}
 
@@ -25,6 +24,20 @@ UserProfile.init(
         profilePicture: {
             type: STRING,
             defaultValue: "",
+        },
+        email: {
+            type: STRING,
+            allowNull: false,
+            unique: true,
+        },
+        username: {
+            type: STRING,
+            allowNull: false,
+            unique: true,
+        },
+        passwordHash: {
+            type: STRING,
+            allowNull: false,
         },
     },
     {

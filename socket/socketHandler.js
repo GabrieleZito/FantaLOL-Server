@@ -71,12 +71,8 @@ module.exports = function (io) {
         });
 
         //TODO controllare prima auction per vedere se ce n'è in corso
-        socket.on("startAsta", (leadId, cb) => {
-            const first = players.get(leadId).shift();
-            asta(leadId, first);
-
-            cb(first);
-            socket.to(leadId).emit("newPlayer", first);
+        socket.on("nextPlayer", (leadId) => {
+            db.getCurrentAuction(leadId);
         });
 
         //TODO controllo sui punti dell'utente

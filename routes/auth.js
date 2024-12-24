@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { UserAuth, UserProfile } = require("../models");
+const { UserProfile } = require("../models");
 const { signUpSchema } = require("../utils/zodSchemas.js");
 const { hashPassword } = require("../utils/misc.js");
 const passport = require("passport");
@@ -10,21 +10,18 @@ router.post("/register", async (req, res) => {
     if (user.success) {
         try {
             const hashed = await hashPassword(user.data.password);
-            const userLogin = await UserAuth.create({
+            const profile = await UserProfile.create({
                 email: user.data.email,
                 username: user.data.username,
                 passwordHash: hashed,
-            });
-            const profile = await UserProfile.create({
-                UserAuthId: userLogin.id,
             });
             req.login(profile, (err) => {
                 if (err) return next(err);
                 return res.status(200).json({
                     msg: "User registered",
-                    email: userLogin.email,
-                    username: userLogin.username,
-                    id: userLogin.id,
+                    email: profile.email,
+                    username: profile.username,
+                    id: profile.id,
                 });
             });
         } catch (e) {

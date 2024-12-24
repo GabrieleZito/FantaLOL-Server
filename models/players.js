@@ -1,11 +1,14 @@
 const { STRING, Model } = require("sequelize");
 const sequelize = require("../config/sequelize.js");
 
-class Teams extends Model {}
+class Players extends Model {}
 
-Teams.init(
+Players.init(
     {
         name: {
+            type: STRING,
+        },
+        role: {
             type: STRING,
         },
     },
@@ -14,4 +17,4 @@ Teams.init(
     }
 );
 
-module.exports = Teams;
+module.exports = Players;

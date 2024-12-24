@@ -1,11 +1,11 @@
-const { UserProfile, UserAuth, Friendships, Leaderboards, Partecipations, Invites, Teams } = require("./models/");
+const { UserProfile, Friendships, Leaderboards, Partecipations, Invites, Teams, Auctions, Bids } = require("./models/");
 const { verifyPassword } = require("./utils/misc");
 const sequelize = require("./config/sequelize");
 const { Op, QueryTypes, where } = require("sequelize");
 
 exports.checkUser = (username, password) => {
     return new Promise(async (resolve, reject) => {
-        const user = await UserAuth.findOne({ where: { username: username } });
+        const user = await UserProfile.findOne({ where: { username: username } });
         if (user) {
             if (await verifyPassword(password, user.passwordHash)) {
                 //console.log("PAssword uguali");
@@ -29,9 +29,8 @@ exports.checkUser = (username, password) => {
 
 exports.getUserById = (id) => {
     return new Promise(async (resolve, reject) => {
-        const userInfo = await UserAuth.findAll({
+        const userInfo = await UserProfile.findAll({
             where: { id: id },
-            include: [{ model: UserProfile }],
         });
         if (userInfo) {
             //console.log("USERINFO");
@@ -40,11 +39,11 @@ exports.getUserById = (id) => {
                 id: userInfo[0].dataValues.id,
                 email: userInfo[0].dataValues.email,
                 username: userInfo[0].dataValues.username,
-                firstName: userInfo[0].dataValues.UserProfile.firstName,
-                lastName: userInfo[0].dataValues.UserProfile.lastName,
-                birthDay: userInfo[0].dataValues.UserProfile.birthDay,
-                bio: userInfo[0].dataValues.UserProfile.bio,
-                profilePicture: userInfo[0].dataValues.UserProfile.profilePicture,
+                firstName: userInfo[0].dataValues.firstName,
+                lastName: userInfo[0].dataValues.lastName,
+                birthDay: userInfo[0].dataValues.birthDay,
+                bio: userInfo[0].dataValues.bio,
+                profilePicture: userInfo[0].dataValues.profilePicture,
             };
             //console.log(user);
 
@@ -57,7 +56,7 @@ exports.getUserById = (id) => {
 exports.getFriendRequests = async (id) => {
     try {
         const users = await sequelize.query(
-            "Select UserProfiles.id, UserAuths.username, UserProfiles.profilePicture FROM UserProfiles, Friendships, UserAuths where Friendships.UserProfileId = UserProfiles.id and Friendships.FriendId = ? and Friendships.UserProfileId = UserAuths.id and status = 'pending'",
+            "Select UserProfiles.id, UserProfiles.username, UserProfiles.profilePicture FROM UserProfiles, Friendships where Friendships.UserProfileId = UserProfiles.id and Friendships.FriendId = ? and Friendships.UserProfileId = UserProfiles.id and status = 'pending'",
             {
                 type: QueryTypes.SELECT,
                 logging: console.log,
@@ -109,10 +108,6 @@ exports.getFriends = async (id) => {
                         where: {
                             id: friendId,
                         },
-                        include: {
-                            model: UserAuth,
-                            attributes: { exclude: ["passwordHash"] },
-                        },
                     });
                     //console.log(friend);
 
@@ -162,10 +157,6 @@ exports.getLeaderboard = async (id) => {
             include: {
                 model: UserProfile,
                 as: "Partecipate",
-                include: {
-                    model: UserAuth,
-                    attributes: ["username"],
-                },
             },
         });
         //console.log(lead);
@@ -186,10 +177,6 @@ exports.getInfoLeaderboardForUser = async (leadId, userId) => {
                 as: "Partecipate",
                 where: {
                     id: userId,
-                },
-                include: {
-                    model: UserAuth,
-                    attributes: ["username"],
                 },
             },
         });
@@ -322,19 +309,32 @@ exports.getFriendLeaderboards = async (id) => {
     }
 };
 
-//TODO da aggiornare
-//TODO problema se non betta nessuno
-exports.assignPlayer = async (leadId, userId, player) => {
+exports.getCurrentAuction = async (leadId) => {
     try {
-        const part = await Partecipations.findOne({
+        const auction = await Auctions.findOne({
             where: {
-                UserProfileId: userId,
                 LeaderboardId: leadId,
+                status: "active",
             },
         });
-        const team = await Teams.findByPk(part.TeamId);
-        const updated = await team.update({ mid1: player });
+        console.log(auction);
+        if (auction) {
+            const bids = await Bids.findAll({
+                where: {
+                    AuctionId: auction.id,
+                },
+                include: {
+                    model: UserProfile,
+                    attributes: ["username"],
+                },
+            });
+            const result = auction.dataValues;
+            result.bids = bids.map((b) => b.dataValues);
+            //console.log(result);
+            return result;
+        } else return null;
     } catch (err) {
+        console.log(err);
         throw err;
     }
 };
