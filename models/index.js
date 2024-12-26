@@ -27,8 +27,9 @@ UserProfile.hasMany(Invites);
 Invites.belongsTo(UserProfile);
 UserProfile.hasMany(Invites, { foreignKey: "InvitedUserId" });
 Invites.belongsTo(UserProfile);
-Teams.hasMany(Players);
-Players.belongsTo(Teams);
+
+Teams.belongsToMany(Players, {through: "TeamPlayer"});
+Players.belongsToMany(Teams, {through: "TeamPlayer"});
 
 Players.hasOne(Auctions);
 Auctions.belongsTo(Players);

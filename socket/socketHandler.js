@@ -4,19 +4,14 @@ const db = require("../database.js");
 module.exports = function (io) {
     //leadId => [{username, userId}, {}, ...]
     let users = new Map();
-    //leadId => [{time, idPlayer, bid, userId, username}]
-    let bids = new Map();
-    //leadId => [{startTime, idPlayer, currentBid, currentBidder, status}]
-    let auctions = new Map();
+    let auctionTimers = new Map();
     //leadId => [{id, name...}, {}]
     let players = new Map();
 
     io.on("connection", (socket) => {
         console.log(`⚡: ${socket.id} user just connected!`);
         socket.on("disconnect", () => {
-            console.log("🔥: A user disconnected");
-            //TODO da togliere
-            users.clear();
+            console.log("🔥: " + socket.data.username + " disconnected");
         });
 
         socket.on("joinAsta", (data, setUsers) => {
@@ -70,103 +65,116 @@ module.exports = function (io) {
             }
         });
 
-        //TODO controllare prima auction per vedere se ce n'è in corso
-        socket.on("nextPlayer", (leadId) => {
-            db.getCurrentAuction(leadId);
+        socket.on("checkAuctions", async (leadId) => {
+            //console.log("dentro check auctions");
+
+            const auction = await db.getCurrentAuction(leadId);
+            if (auction) {
+                io.in(leadId).emit("newPlayer", auction);
+                const timer = auctionTimers.get(auction.id);
+                io.in(leadId).emit("timer:sync", timer.getRemainingTime());
+            } else {
+                io.in(leadId).emit("newPlayer", null);
+            }
+        });
+
+        socket.on("nextPlayer", async (leadId) => {
+            //TODO calcolare le aste che mancano prendendo quelle nel db
+            const nextPlayer = players.get(leadId).shift();
+            //console.log(nextPlayer);
+            const player = await db.newPlayer(nextPlayer);
+            const auction = await db.newAuction(Date.now(), Date.now() + 120000, player.id, leadId);
+            auction.dataValues.bids = [];
+            auction.dataValues.Player = nextPlayer;
+            //console.log(auction.dataValues);
+            const timer = new AuctionTimer(io, auction.id, leadId);
+            auctionTimers.set(auction.id, timer);
+            timer.start();
+
+            io.in(leadId).emit("newPlayer", auction.dataValues);
         });
 
         //TODO controllo sui punti dell'utente
         //TODO controllare se l'offerta è valida
         //TODO aggiungere controlli segnati sul client
-        socket.on("bid", (leadId, bid, cb) => {
-            let auction;
-            if (auctions.has(leadId)) {
-                auction = auctions.get(leadId).filter((a) => a.status == "ongoing")[0];
-                console.log("Auction:");
+        socket.on("bid", async (leadId, bid, error) => {
+            const userId = socket.data.userId;
+            let coins = await db.getUserCoins(userId, leadId);
+            coins = coins.dataValues.Partecipate[0].Partecipations.coins;
+            //console.log(coins);
+            //console.log(bid);
 
-                console.log(auction);
+            //TODO altri controlli
+            if (bid > coins) {
+                error("Not enough coins");
             } else {
-                //TODO gestire errore
-                console.error("ERRORE");
-            }
-            if (bids.has(leadId)) {
-                bids.get(leadId).push({
-                    time: Date.now(),
-                    idPlayer: auction.player,
-                    bid: bid,
-                    userId: socket.data.userId,
-                    username: socket.data.username,
-                });
-
-                //aggiorna l'asta
-                const a = auctions.get(leadId);
-                const i = a.findIndex((item) => item.player == auction.player);
-                a[i] = { ...a[i], currentBid: bid, currentBidder: socket.data.userId };
-                auctions.set(leadId, a);
-
-                //manda agli utenti la lista delle offerte
-                const bidsToSend = bids
-                    .get(leadId)
-                    .filter((b) => b.idPlayer == auction.player)
-                    .sort((a, b) => b.bid - a.bid);
-                cb(bidsToSend);
-                socket.in(leadId).emit("newBid", bidsToSend);
+                const auction = await db.getCurrentAuction(leadId);
+                //console.log(auction);
+                //console.log(auction.id);
+                const max = await db.getMaxBid(auction.id);
+                console.log(max);
+                //bids.forEach((b) => console.log(b));
+                if (max > 0 && bid < max) {
+                    error("Bid Too Low");
+                } else {
+                    console.log("bid " + bid);
+                    //console.log("dentro else");
+                    const Bid = await db.newBid(bid, userId, auction.id);
+                    const bids = await db.getBidsForAuction(auction.id);
+                    await db.updateAuction(auction.id, bid, userId);
+                    io.to(leadId).emit("newBid", bids.reverse());
+                }
             }
         });
 
         socket.on("show", () => {
             console.log(users);
-            console.log(bids);
-            console.log(auctions);
+            //console.log(auctions);
             //console.log(players);
         });
-
-        //TODO gestire invio dati se qualcuno entra mid-asta
-        const asta = (leadId, player) => {
-            auctions.set(leadId, [
-                {
-                    startTime: Date.now(),
-                    endTime: Date.now() + 61000,
-                    currentBid: 0,
-                    currentBidder: null,
-                    status: "ongoing",
-                    player: player.id,
-                },
-            ]);
-            bids.set(leadId, []);
-            astaCountdown(leadId, player.id);
-        };
-        const astaCountdown = (leadId, player) => {
-            let endTime;
-            if (auctions.has(leadId)) {
-                //TODO questo controllo fa un po' cagare
-                auctions.get(leadId).forEach((a) => {
-                    if (a.player == player) {
-                        endTime = a.endTime;
-                    }
-                });
-                console.log("inizio timer");
-
-                const interval = setInterval(() => {
-                    //console.log("endTime: " + endTime);
-
-                    const remainingTime = endTime - Date.now();
-                    if (remainingTime <= 0) {
-                        clearInterval(interval);
-                        console.log("timer finito " + leadId);
-
-                        const a = auctions.get(leadId);
-                        const i = a.findIndex((item) => item.player == player && item.status == "ongoing");
-                        a[i] = { ...a[i], status: "closed" };
-                        auctions.set(leadId, a);
-
-                        db.assignPlayer(leadId, a[i].currentBidder, player);
-                        io.in(leadId).emit("endedAsta", a[i].currentBidder);
-                    } else {
-                        //console.log(`Leaderboard ${leadId}: ${remainingTime} ms remaining`);
-                    }
-                }, 500);
-            } else throw Error("L'asta non esiste");
-        };
     });
+
+    class AuctionTimer {
+        constructor(io, auctionId, leadId) {
+            this.io = io;
+            this.auctionId = auctionId;
+            this.duration = 1 * 60; // 2 minutes in seconds
+            this.endTime = null;
+            this.timer = null;
+            this.leadId = leadId;
+        }
+
+        start() {
+            console.log("dentro start timer");
+
+            this.endTime = Date.now() + this.duration * 1000;
+
+            // Emit initial time to all clients in the auction room
+            this.io.to(this.leadId).emit("timer:start", {
+                remainingTime: this.getRemainingTime(),
+            });
+
+            // Set server timer
+            this.timer = setTimeout(async () => {
+                await this.endAuction();
+            }, this.duration * 1000);
+        }
+
+        async endAuction() {
+            clearTimeout(this.timer);
+
+            const auction = await db.endAuction(this.auctionId);
+
+            this.io.to(this.leadId).emit("timer:end", {
+                auctionId: auction.currentBid,
+            });
+
+            auctionTimers.delete(this.auctionId);
+        }
+
+        getRemainingTime() {
+            if (!this.endTime) return 0;
+            return Math.max(0, this.endTime - Date.now());
+        }
+    }
 };

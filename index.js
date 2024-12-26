@@ -3,6 +3,7 @@ const morgan = require("morgan");
 const cors = require("cors");
 require("dotenv").config();
 const session = require("express-session");
+const db = require("./database.js");
 
 //DATABASE
 const sequelize = require("./config/sequelize.js");
@@ -47,6 +48,11 @@ app.use("/auth", authRouter);
 app.use("/league", leagueRouter);
 app.use("/users", usersRouter);
 app.use("/leaderboards", leadRouter);
+
+app.get("/prova", async (req, res) => {
+    const c = await db.getCurrentAuction(1)
+    res.json(c)
+})
 
 const { createServer } = require("http");
 const { Server } = require("socket.io");

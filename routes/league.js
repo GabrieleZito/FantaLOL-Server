@@ -34,6 +34,7 @@ router.get("/tournaments/nextTournaments", async (req, res) => {
 
 //TODO scaricare e salvare le immagini
 //TODO spostare il refetch in un posto più generico
+//TODO da riscrivere tutto
 router.get("/tournaments/lec", async (req, res) => {
     console.log("current date:" + currentDate);
 
@@ -63,13 +64,14 @@ router.get("/tournaments/lec", async (req, res) => {
             const splits = await getLecTournaments();
             console.log("dentro confronto");
 
-            fs.writeFile(
+            /* fs.writeFile(
                 __dirname + "/../liquipedia/lec_splits.json",
                 JSON.stringify({ date: currentDate, data: splits }),
                 (err) => {
                     if (err) console.log(err);
                 }
-            );
+            ); */
+            fs.writeFileSync(__dirname + "/../liquipedia/lec_splits.json", JSON.stringify({ date: currentDate, data: splits }));
             Object.assign(result, { splits: splits });
         } else {
             //console.log("dentro altro else");
@@ -81,12 +83,16 @@ router.get("/tournaments/lec", async (req, res) => {
         const participants = await getLecParticipants();
         //console.log(participants);
         console.log("dentro 1");
-        fs.writeFile(
+        /* fs.writeFile(
             __dirname + "/../liquipedia/lec_participants.json",
             JSON.stringify({ date: currentDate, data: participants }),
             (err) => {
                 if (err) console.log(err);
             }
+        ); */
+        fs.writeFileSync(
+            __dirname + "/../liquipedia/lec_participants.json",
+            JSON.stringify({ date: currentDate, data: participants })
         );
         Object.assign(result, { participants: participants });
     } else {
@@ -138,7 +144,7 @@ router.get("/tournaments/lec", async (req, res) => {
             __dirname + "/../liquipedia/lec_players.json",
             JSON.stringify({ date: currentDate, data: players }),
             (err) => {
-                if (err) console.log(err);
+                if (err) console.log("err:" + err);
             }
         );
     }

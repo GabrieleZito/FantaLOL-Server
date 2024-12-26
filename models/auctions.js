@@ -14,6 +14,12 @@ Auctions.init(
         currentBidder: {
             type: INTEGER,
         },
+        startTime: {
+            type: INTEGER,
+        },
+        endTime: {
+            type: INTEGER,
+        },
     },
     {
         sequelize,

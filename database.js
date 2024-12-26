@@ -1,7 +1,8 @@
-const { UserProfile, Friendships, Leaderboards, Partecipations, Invites, Teams, Auctions, Bids } = require("./models/");
+const { UserProfile, Friendships, Leaderboards, Partecipations, Invites, Teams, Auctions, Bids, Players } = require("./models/");
 const { verifyPassword } = require("./utils/misc");
 const sequelize = require("./config/sequelize");
 const { Op, QueryTypes, where } = require("sequelize");
+const fs = require("fs");
 
 exports.checkUser = (username, password) => {
     return new Promise(async (resolve, reject) => {
@@ -284,7 +285,7 @@ exports.acceptInvite = async (id) => {
 //TODO togliere info non necessarie da UserProfile
 exports.getFriendLeaderboards = async (id) => {
     try {
-        const user = await UserProfile.findByPk(id);
+        //const user = await UserProfile.findByPk(id);
         const leads = await UserProfile.findAll({
             where: {
                 id: id,
@@ -316,8 +317,11 @@ exports.getCurrentAuction = async (leadId) => {
                 LeaderboardId: leadId,
                 status: "active",
             },
+            include: {
+                model: Players,
+            },
         });
-        console.log(auction);
+        //console.log(auction);
         if (auction) {
             const bids = await Bids.findAll({
                 where: {
@@ -331,8 +335,140 @@ exports.getCurrentAuction = async (leadId) => {
             const result = auction.dataValues;
             result.bids = bids.map((b) => b.dataValues);
             //console.log(result);
+            if (fs.existsSync(__dirname + "/liquipedia/lec_players.json")) {
+                //console.log("dentro if");
+
+                let file = fs.readFileSync(__dirname + "/liquipedia/lec_players.json");
+                file = JSON.parse(file);
+                //console.log(file.data[0].id);
+
+                file.data.forEach((p) => {
+                    if (p && p.id == result.Player.name) {
+                        result.Player = p;
+                    }
+                });
+            }
             return result;
         } else return null;
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+};
+
+exports.newAuction = async (startTime, endTime, playerId, leadId) => {
+    try {
+        const auction = await Auctions.create({
+            status: "active",
+            startTime: startTime,
+            endTime: endTime,
+            PlayerId: playerId,
+            LeaderboardId: leadId,
+        });
+        return auction;
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+};
+
+exports.newPlayer = async (player) => {
+    try {
+        const p = await Players.create({
+            name: player.id,
+            role: player.extradata.role,
+        });
+        return p;
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+};
+
+exports.getUserCoins = async (userId, leadId) => {
+    try {
+        const lead = await Leaderboards.findOne({
+            where: {
+                id: leadId,
+            },
+            include: {
+                model: UserProfile,
+                as: "Partecipate",
+                where: {
+                    id: userId,
+                },
+            },
+        });
+        //console.log(lead);
+        return lead;
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+};
+
+exports.newBid = async (bid, userId, auctionId) => {
+    try {
+        const Bid = await Bids.create({
+            bid: bid,
+            UserProfileId: userId,
+            AuctionId: auctionId,
+        });
+        return Bid.dataValues;
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+};
+
+exports.getBidsForAuction = async (auctionId) => {
+    try {
+        const bids = await Bids.findAll({
+            where: {
+                AuctionId: auctionId,
+            },
+            include: {
+                model: UserProfile,
+                attributes: ["username"],
+            },
+        });
+        return bids;
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+};
+
+exports.updateAuction = async (auctionId, bid, userId) => {
+    try {
+        const auction = await Auctions.findOne({
+            where: {
+                id: auctionId,
+            },
+        });
+        await auction.update({ currentBid: bid, UserProfileId: userId });
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+};
+
+exports.endAuction = async (auctionId) => {
+    try {
+        const maxBid = await Bids.max("bid", { where: { auctionId: auctionId } });
+        const auction = await Auctions.findByPk(auctionId);
+        await auction.update({ status: "closed", currentBid: maxBid });
+        return auction;
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+};
+
+exports.getMaxBid = async (auctionId) => {
+    try {
+        const maxBid = await Bids.max("bid", { where: { auctionId: auctionId } });
+        return maxBid;
     } catch (err) {
         console.log(err);
         throw err;
