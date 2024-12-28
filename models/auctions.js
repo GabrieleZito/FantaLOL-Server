@@ -11,9 +11,6 @@ Auctions.init(
         currentBid: {
             type: INTEGER,
         },
-        currentBidder: {
-            type: INTEGER,
-        },
         startTime: {
             type: INTEGER,
         },

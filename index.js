@@ -50,9 +50,9 @@ app.use("/users", usersRouter);
 app.use("/leaderboards", leadRouter);
 
 app.get("/prova", async (req, res) => {
-    const c = await db.getCurrentAuction(1)
-    res.json(c)
-})
+    const c = await db.getCurrentAuction(1);
+    res.json(c);
+});
 
 const { createServer } = require("http");
 const { Server } = require("socket.io");

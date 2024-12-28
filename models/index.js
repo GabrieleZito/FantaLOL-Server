@@ -8,6 +8,7 @@ const Invites = require("./invites");
 const Players = require("./players");
 const Auctions = require("./auctions");
 const Bids = require("./bids");
+const TeamPlayers = require("./teamplayers");
 
 UserProfile.belongsToMany(UserProfile, { through: Friendships, as: "Friends" });
 UserProfile.belongsToMany(Leaderboards, {
@@ -28,8 +29,8 @@ Invites.belongsTo(UserProfile);
 UserProfile.hasMany(Invites, { foreignKey: "InvitedUserId" });
 Invites.belongsTo(UserProfile);
 
-Teams.belongsToMany(Players, {through: "TeamPlayer"});
-Players.belongsToMany(Teams, {through: "TeamPlayer"});
+Teams.belongsToMany(Players, { through: TeamPlayers });
+Players.belongsToMany(Teams, { through: TeamPlayers });
 
 Players.hasOne(Auctions);
 Auctions.belongsTo(Players);
@@ -56,4 +57,5 @@ module.exports = {
     Auctions,
     Players,
     Bids,
+    TeamPlayers,
 };

@@ -1,4 +1,15 @@
-const { UserProfile, Friendships, Leaderboards, Partecipations, Invites, Teams, Auctions, Bids, Players } = require("./models/");
+const {
+    UserProfile,
+    Friendships,
+    Leaderboards,
+    Partecipations,
+    Invites,
+    Teams,
+    Auctions,
+    Bids,
+    Players,
+    TeamPlayers,
+} = require("./models/");
 const { verifyPassword } = require("./utils/misc");
 const sequelize = require("./config/sequelize");
 const { Op, QueryTypes, where } = require("sequelize");
@@ -457,8 +468,36 @@ exports.endAuction = async (auctionId) => {
     try {
         const maxBid = await Bids.max("bid", { where: { auctionId: auctionId } });
         const auction = await Auctions.findByPk(auctionId);
-        await auction.update({ status: "closed", currentBid: maxBid });
-        return auction;
+        if (!auction.currentBid || !auction.UserProfileId) {
+            await auction.update({ status: "cancelled", endTime: Date.now() });
+            return null;
+        } else {
+            await auction.update({ status: "closed", currentBid: maxBid, endTime: Date.now() });
+            const au = await Auctions.findOne({
+                where: (id = auctionId),
+                include: {
+                    model: Players,
+                },
+            });
+            const leadId = au.LeaderboardId;
+            const userId = au.UserProfileId;
+            const partec = await Partecipations.findOne({
+                where: {
+                    UserProfileId: userId,
+                    LeaderboardId: leadId,
+                },
+            });
+            //console.log(partec);
+            await partec.update({ coins: partec.coins - auction.currentBid });
+            const teamId = partec.TeamId;
+            const teamPlayer = await TeamPlayers.create({
+                TeamId: teamId,
+                PlayerId: au.Player.id,
+            });
+            //console.log(au);
+
+            return auction;
+        }
     } catch (err) {
         console.log(err);
         throw err;
@@ -469,6 +508,45 @@ exports.getMaxBid = async (auctionId) => {
     try {
         const maxBid = await Bids.max("bid", { where: { auctionId: auctionId } });
         return maxBid;
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+};
+
+exports.createPlayer = async (name, role) => {
+    try {
+        const player = await Players.create({
+            name: name,
+            role: role,
+        });
+        return player;
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+};
+
+exports.getClosedAuctions = async (leadId) => {
+    try {
+        const auctions = Auctions.findAll({
+            where: {
+                LeaderboardId: leadId,
+                status: "closed",
+            },
+            include: Players,
+        });
+        return auctions;
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+};
+
+exports.getPlayers = async () => {
+    try {
+        const players = await Players.findAll();
+        return players;
     } catch (err) {
         console.log(err);
         throw err;

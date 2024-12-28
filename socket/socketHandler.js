@@ -29,6 +29,7 @@ module.exports = function (io) {
                 users.set(leadId, [{ username, userId }]);
                 file = fs.readFileSync(__dirname + "/../liquipedia/lec_players.json");
                 file = JSON.parse(file);
+                //TODO
 
                 players.set(leadId, file.data);
                 //console.log(players);
@@ -79,19 +80,33 @@ module.exports = function (io) {
         });
 
         socket.on("nextPlayer", async (leadId) => {
-            //TODO calcolare le aste che mancano prendendo quelle nel db
-            const nextPlayer = players.get(leadId).shift();
-            //console.log(nextPlayer);
-            const player = await db.newPlayer(nextPlayer);
-            const auction = await db.newAuction(Date.now(), Date.now() + 120000, player.id, leadId);
-            auction.dataValues.bids = [];
-            auction.dataValues.Player = nextPlayer;
-            //console.log(auction.dataValues);
-            const timer = new AuctionTimer(io, auction.id, leadId);
-            auctionTimers.set(auction.id, timer);
-            timer.start();
+            if (players.get(leadId).length > 0) {
+                //TODO calcolare le aste che mancano prendendo quelle nel db
+                const nextPlayer = players.get(leadId).shift();
+                //players.set(leadId, [])
 
-            io.in(leadId).emit("newPlayer", auction.dataValues);
+                const closedAuctions = await db.getClosedAuctions(leadId);
+                //console.log(closedAuctions);
+                let playersDB = await db.getPlayers();
+                const results = playersDB.filter(({ id: id1 }) => !closedAuctions.some(({ PlayerId: id2 }) => id2 === id1));
+
+                console.log(results);
+                console.log(results.length);
+
+                //console.log(nextPlayer);
+                const player = await db.newPlayer(nextPlayer);
+                const auction = await db.newAuction(Date.now(), Date.now() + 120000, player.id, leadId);
+                auction.dataValues.bids = [];
+                auction.dataValues.Player = nextPlayer;
+                //console.log(auction.dataValues);
+                const timer = new AuctionTimer(io, auction.id, leadId);
+                auctionTimers.set(auction.id, timer);
+                timer.start();
+
+                io.in(leadId).emit("newPlayer", auction.dataValues);
+            } else {
+                io.in(leadId).emit("newPlayer", null);
+            }
         });
 
         //TODO controllo sui punti dell'utente
@@ -138,7 +153,7 @@ module.exports = function (io) {
         constructor(io, auctionId, leadId) {
             this.io = io;
             this.auctionId = auctionId;
-            this.duration = 1 * 60; // 2 minutes in seconds
+            this.duration = 1 * 10; // 2 minutes in seconds
             this.endTime = null;
             this.timer = null;
             this.leadId = leadId;

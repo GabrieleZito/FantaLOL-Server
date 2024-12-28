@@ -4,6 +4,7 @@ const router = express.Router();
 const pandascore = require("@api/developers-pandascore");
 const { getLecTournaments, getLecParticipants, getLecPlayers, getPlayerByName } = require("../utils/api");
 const fs = require("fs");
+const db = require("../database.js");
 
 const current = "https://api.pandascore.co/lol/tournaments/running";
 const next = "https://api.pandascore.co/lol/tournaments/upcoming";
@@ -136,9 +137,15 @@ router.get("/tournaments/lec", async (req, res) => {
         let playersNames = await getLecPlayers();
         let players = [];
         for (let i = 0; i < playersNames.length; i++) {
+            let player
             const p = playersNames[i];
-            let player = await getPlayerByName(p);
-            players.push(player);
+            if (p == "Nuc") {
+                player = await getPlayerByName("nuc");
+            }else player = await getPlayerByName(p);
+            if (player) {
+                const pl = await db.createPlayer(player.id, player.extradata.role);
+                players.push(player);
+            }
         }
         fs.writeFile(
             __dirname + "/../liquipedia/lec_players.json",
