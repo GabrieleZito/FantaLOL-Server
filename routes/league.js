@@ -2,18 +2,11 @@ const { default: axios } = require("axios");
 const express = require("express");
 const router = express.Router();
 const pandascore = require("@api/developers-pandascore");
-const { getLecTournaments, getLecParticipants, getLecPlayers, getPlayerByName } = require("../utils/api");
 const fs = require("fs");
 const db = require("../database.js");
 
 const current = "https://api.pandascore.co/lol/tournaments/running";
 const next = "https://api.pandascore.co/lol/tournaments/upcoming";
-
-const today = new Date();
-let day = today.getDate();
-let month = today.getMonth() + 1;
-let year = today.getFullYear();
-let currentDate = year + "-" + month + "-" + day;
 
 router.get("/tournaments/currentTournaments", async (req, res) => {
     pandascore.auth(process.env.PANDASCORE_API);
@@ -34,127 +27,22 @@ router.get("/tournaments/nextTournaments", async (req, res) => {
 });
 
 //TODO scaricare e salvare le immagini
-//TODO spostare il refetch in un posto più generico
-//TODO da riscrivere tutto
 router.get("/tournaments/lec", async (req, res) => {
-    console.log("current date:" + currentDate);
 
     let result = {};
-    if (!fs.existsSync(__dirname + "/../liquipedia/lec_splits.json")) {
-        const splits = await getLecTournaments();
-        fs.writeFile(__dirname + "/../liquipedia/lec_splits.json", JSON.stringify({ date: currentDate, data: splits }), (err) => {
-            if (err) console.log(err);
-        });
 
-        Object.assign(result, { splits: splits });
-        //console.log("DEntro if");
-    } else {
-        const today = new Date();
-        let data = fs.readFileSync(__dirname + "/../liquipedia/lec_splits.json");
-        //console.log("dentro else");
-        data = JSON.parse(data);
-        const giorno = new Date(data.date);
-        //console.log("giorno : " + giorno);
-        //console.log("today : " + today);
+    let data = fs.readFileSync(__dirname + "/../liquipedia/lec_splits.json");
+    data = JSON.parse(data);
+    result.splits = data;
 
-        if (
-            giorno.getFullYear() < today.getFullYear() ||
-            giorno.getMonth() + 1 < today.getMonth() + 1 ||
-            giorno.getDate() < today.getDate()
-        ) {
-            const splits = await getLecTournaments();
-            console.log("dentro confronto");
+    let file = fs.readFileSync(__dirname + "/../liquipedia/lec_participants.json");
+    file = JSON.parse(file);
+    result.participants = file;
 
-            /* fs.writeFile(
-                __dirname + "/../liquipedia/lec_splits.json",
-                JSON.stringify({ date: currentDate, data: splits }),
-                (err) => {
-                    if (err) console.log(err);
-                }
-            ); */
-            fs.writeFileSync(__dirname + "/../liquipedia/lec_splits.json", JSON.stringify({ date: currentDate, data: splits }));
-            Object.assign(result, { splits: splits });
-        } else {
-            //console.log("dentro altro else");
-            Object.assign(result, { splits: data.data });
-        }
-    }
-
-    if (!fs.existsSync(__dirname + "/../liquipedia/lec_participants.json")) {
-        const participants = await getLecParticipants();
-        //console.log(participants);
-        console.log("dentro 1");
-        /* fs.writeFile(
-            __dirname + "/../liquipedia/lec_participants.json",
-            JSON.stringify({ date: currentDate, data: participants }),
-            (err) => {
-                if (err) console.log(err);
-            }
-        ); */
-        fs.writeFileSync(
-            __dirname + "/../liquipedia/lec_participants.json",
-            JSON.stringify({ date: currentDate, data: participants })
-        );
-        Object.assign(result, { participants: participants });
-    } else {
-        console.log("dentro 2");
-        let file = fs.readFileSync(__dirname + "/../liquipedia/lec_participants.json");
-        file = JSON.parse(file);
-        const giorno = new Date(file.date);
-        console.log(file.date);
-
-        if (
-            giorno.getFullYear() < today.getFullYear() ||
-            giorno.getMonth() + 1 < today.getMonth() + 1 ||
-            giorno.getDate() < today.getDate()
-        ) {
-            console.log("dentro 3");
-
-            const participants = await getLecParticipants();
-            //console.log(participants);
-
-            fs.writeFile(
-                __dirname + "/../liquipedia/lec_participants.json",
-                JSON.stringify({ date: currentDate, data: participants }),
-                (err) => {
-                    if (err) console.log(err);
-                }
-            );
-            Object.assign(result, { participants: participants });
-        } else {
-            console.log("dentro 4");
-
-            Object.assign(result, { participants: file.data });
-        }
-    }
     const result2 = result.splits.map((x) => {
         x.participants = result.participants.filter((y) => x.pagename == y.pagename);
         return x;
     });
-
-    //TODO aggiungere constrolli su data
-    if (!fs.existsSync(__dirname + "/../liquipedia/lec_players.json")) {
-        let playersNames = await getLecPlayers();
-        let players = [];
-        for (let i = 0; i < playersNames.length; i++) {
-            let player
-            const p = playersNames[i];
-            if (p == "Nuc") {
-                player = await getPlayerByName("nuc");
-            }else player = await getPlayerByName(p);
-            if (player) {
-                const pl = await db.createPlayer(player.id, player.extradata.role);
-                players.push(player);
-            }
-        }
-        fs.writeFile(
-            __dirname + "/../liquipedia/lec_players.json",
-            JSON.stringify({ date: currentDate, data: players }),
-            (err) => {
-                if (err) console.log("err:" + err);
-            }
-        );
-    }
 
     res.json(result2);
 

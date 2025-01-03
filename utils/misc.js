@@ -1,4 +1,5 @@
 const argon2 = require("argon2");
+const fs = require("fs")
 
 exports.hashPassword = (password) => {
     return argon2.hash(password);
@@ -17,3 +18,13 @@ exports.verifyPassword = async (psw, hashedPsw) => {
         return e;
     }
 };
+
+exports.getPlayerFromJson = (name) => {
+    let players = fs.readFileSync(__dirname+"/../liquipedia/lec_players.json")
+    players = JSON.parse(players)
+    for(p in players){
+        if (players[p].pagename == name) {
+            return players[p]
+        }
+    }
+}

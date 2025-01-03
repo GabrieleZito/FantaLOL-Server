@@ -1,12 +1,11 @@
 const fs = require("fs");
 const db = require("../database.js");
+const { getPlayerFromJson } = require("../utils/misc.js");
 
 module.exports = function (io) {
     //leadId => [{username, userId}, {}, ...]
     let users = new Map();
     let auctionTimers = new Map();
-    //leadId => [{id, name...}, {}]
-    let players = new Map();
 
     io.on("connection", (socket) => {
         console.log(`⚡: ${socket.id} user just connected!`);
@@ -15,11 +14,9 @@ module.exports = function (io) {
         });
 
         socket.on("joinAsta", (data, setUsers) => {
-            //console.log(data);
             const leadId = data.leadId;
             const username = data.username;
             const userId = data.userId;
-            //console.log(leadId);
 
             socket.join(leadId);
             socket.data.username = username;
@@ -27,13 +24,6 @@ module.exports = function (io) {
 
             if (users.get(leadId) === undefined) {
                 users.set(leadId, [{ username, userId }]);
-                file = fs.readFileSync(__dirname + "/../liquipedia/lec_players.json");
-                file = JSON.parse(file);
-                //TODO
-
-                players.set(leadId, file.data);
-                //console.log(players);
-
                 setUsers(users.get(leadId));
                 socket.to(leadId).emit("userJoined", { username, userId });
             } else {
@@ -50,7 +40,6 @@ module.exports = function (io) {
                     socket.to(leadId).emit("userJoined", { username, userId });
                 }
             }
-            //console.log(users);
         });
 
         socket.on("leaveAsta", (data) => {
@@ -67,11 +56,10 @@ module.exports = function (io) {
         });
 
         socket.on("checkAuctions", async (leadId) => {
-            //console.log("dentro check auctions");
-
             const auction = await db.getCurrentAuction(leadId);
             if (auction) {
                 io.in(leadId).emit("newPlayer", auction);
+                //TODO gestire il caso in cui non esista il timer
                 const timer = auctionTimers.get(auction.id);
                 io.in(leadId).emit("timer:sync", timer.getRemainingTime());
             } else {
@@ -80,25 +68,24 @@ module.exports = function (io) {
         });
 
         socket.on("nextPlayer", async (leadId) => {
-            if (players.get(leadId).length > 0) {
-                //TODO calcolare le aste che mancano prendendo quelle nel db
-                const nextPlayer = players.get(leadId).shift();
-                //players.set(leadId, [])
+            const closedAuctions = await db.getClosedAuctions(leadId);
+            const closedPlayers = await Promise.all(
+                closedAuctions.map(async (a) => {
+                    const p = await db.getPlayerById(a.PlayerId);
+                    return p;
+                })
+            );
+            const allPlayers = await db.getPlayers();
 
-                const closedAuctions = await db.getClosedAuctions(leadId);
-                //console.log(closedAuctions);
-                let playersDB = await db.getPlayers();
-                const results = playersDB.filter(({ id: id1 }) => !closedAuctions.some(({ PlayerId: id2 }) => id2 === id1));
+            const existingIds = new Set(closedPlayers.map((p) => p.name));
+            const missingPlayers = allPlayers.filter((player) => !existingIds.has(player.name));
+            if (missingPlayers.length > 0) {
+                const player2 = missingPlayers.shift();
+                missingPlayers.forEach((m) => console.log(m.name));
 
-                console.log(results);
-                console.log(results.length);
-
-                //console.log(nextPlayer);
-                const player = await db.newPlayer(nextPlayer);
-                const auction = await db.newAuction(Date.now(), Date.now() + 120000, player.id, leadId);
+                const auction = await db.newAuction(Date.now(), Date.now() + 120000, player2.id, leadId);
                 auction.dataValues.bids = [];
-                auction.dataValues.Player = nextPlayer;
-                //console.log(auction.dataValues);
+                auction.dataValues.Player = getPlayerFromJson(player2.name);
                 const timer = new AuctionTimer(io, auction.id, leadId);
                 auctionTimers.set(auction.id, timer);
                 timer.start();
@@ -116,24 +103,19 @@ module.exports = function (io) {
             const userId = socket.data.userId;
             let coins = await db.getUserCoins(userId, leadId);
             coins = coins.dataValues.Partecipate[0].Partecipations.coins;
-            //console.log(coins);
-            //console.log(bid);
 
             //TODO altri controlli
             if (bid > coins) {
                 error("Not enough coins");
             } else {
                 const auction = await db.getCurrentAuction(leadId);
-                //console.log(auction);
-                //console.log(auction.id);
+
                 const max = await db.getMaxBid(auction.id);
-                console.log(max);
-                //bids.forEach((b) => console.log(b));
+                //console.log(max);
                 if (max > 0 && bid < max) {
                     error("Bid Too Low");
                 } else {
                     console.log("bid " + bid);
-                    //console.log("dentro else");
                     const Bid = await db.newBid(bid, userId, auction.id);
                     const bids = await db.getBidsForAuction(auction.id);
                     await db.updateAuction(auction.id, bid, userId);
@@ -145,7 +127,7 @@ module.exports = function (io) {
         socket.on("show", () => {
             console.log(users);
             //console.log(auctions);
-            //console.log(players);
+            console.log(players.get(1).length);
         });
     });
 
@@ -153,14 +135,15 @@ module.exports = function (io) {
         constructor(io, auctionId, leadId) {
             this.io = io;
             this.auctionId = auctionId;
-            this.duration = 1 * 10; // 2 minutes in seconds
+            //TODO cambiare a 1 minuto
+            this.duration = 1 * 60;
             this.endTime = null;
             this.timer = null;
             this.leadId = leadId;
         }
 
         start() {
-            console.log("dentro start timer");
+            //console.log("dentro start timer");
 
             this.endTime = Date.now() + this.duration * 1000;
 
@@ -177,11 +160,10 @@ module.exports = function (io) {
 
         async endAuction() {
             clearTimeout(this.timer);
-
             const auction = await db.endAuction(this.auctionId);
 
             this.io.to(this.leadId).emit("timer:end", {
-                auctionId: auction.currentBid,
+                auctionId: auction,
             });
 
             auctionTimers.delete(this.auctionId);

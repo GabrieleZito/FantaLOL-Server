@@ -351,9 +351,9 @@ exports.getCurrentAuction = async (leadId) => {
 
                 let file = fs.readFileSync(__dirname + "/liquipedia/lec_players.json");
                 file = JSON.parse(file);
-                //console.log(file.data[0].id);
+                //console.log(file[0].id);
 
-                file.data.forEach((p) => {
+                file.forEach((p) => {
                     if (p && p.id == result.Player.name) {
                         result.Player = p;
                     }
@@ -529,7 +529,7 @@ exports.createPlayer = async (name, role) => {
 
 exports.getClosedAuctions = async (leadId) => {
     try {
-        const auctions = Auctions.findAll({
+        const auctions = await Auctions.findAll({
             where: {
                 LeaderboardId: leadId,
                 status: "closed",
@@ -550,5 +550,28 @@ exports.getPlayers = async () => {
     } catch (err) {
         console.log(err);
         throw err;
+    }
+};
+
+exports.getPlayerByName = async (name) => {
+    try {
+        const player = await Players.findOne({
+            where: {
+                name: name,
+            },
+        });
+        return player;
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+};
+
+exports.getPlayerById = async (playerId) => {
+    try {
+        const player = await Players.findByPk(playerId);
+        return player;
+    } catch (error) {
+        console.error(error);
     }
 };
