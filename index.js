@@ -54,8 +54,8 @@ app.get("/prova", async (req, res) => {
     res.json(c);
 });
 
-const daily = require("./utils/dailyTasks.js")
-daily()
+const daily = require("./utils/dailyTasks.js");
+daily();
 
 const { createServer } = require("http");
 const { Server } = require("socket.io");

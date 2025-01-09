@@ -48,6 +48,8 @@ const addPlayersToDB = async () => {
         let players = fs.readFileSync(__dirname + "/../liquipedia/lec_players.json");
         players = JSON.parse(players);
         //console.log(players);
+        //console.log("dentro add");
+
         for (let p = 0; p < players.length; p++) {
             const e = players[p];
             const c = await db.getPlayerByName(e.pagename);

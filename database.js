@@ -10,7 +10,7 @@ const {
     Players,
     TeamPlayers,
 } = require("./models/");
-const { verifyPassword } = require("./utils/misc");
+const { verifyPassword, getPlayerFromJson } = require("./utils/misc");
 const sequelize = require("./config/sequelize");
 const { Op, QueryTypes, where } = require("sequelize");
 const fs = require("fs");
@@ -573,5 +573,30 @@ exports.getPlayerById = async (playerId) => {
         return player;
     } catch (error) {
         console.error(error);
+    }
+};
+
+exports.getUserTeam = async (userId, leadId) => {
+    try {
+        const part = await Partecipations.findOne({
+            where: {
+                UserProfileId: userId,
+                LeaderboardId: leadId,
+            },
+            attributes:["TeamId"],
+            include: {
+                model: Teams,
+                attributes:["id", "name"],
+                include: {
+                    model: Players,
+                },
+            },
+        });
+        //console.log(part.Team.Players);
+        //part.Team.Players = part.Team.Players.map(p => getPlayerFromJson(p.name))
+        return part;
+    } catch (error) {
+        console.log(error);
+        throw error;
     }
 };

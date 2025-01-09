@@ -69,4 +69,18 @@ router.get("/user/:id/friends", isLoggedIn, async (req, res) => {
     }
 });
 
+router.get("/:id/team", isLoggedIn, async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    try {
+        const team = await db.getUserTeam(userId, id);
+
+        res.json(team);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ err: error });
+    }
+});
+
 module.exports = router;
