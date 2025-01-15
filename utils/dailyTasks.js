@@ -1,17 +1,24 @@
 const cron = require("node-cron");
 const fs = require("fs");
-const { getLecPlayers, getLecTournaments, getLecParticipants } = require("./api");
+const { getLecPlayers, getLecTournaments, getLecParticipants, getDayMatches } = require("./api");
 const db = require("../database.js");
+const { default: axios } = require("axios");
 
 module.exports = async () => {
-    cron.schedule("0 0 * * * *", async () => {
-        console.log("Daily Cron");
+    cron.schedule(
+        "0 0 1 * * *",
+        async () => {
+            console.log("Daily Tasks " + new Date());
 
-        await LecSplits();
-        await LecParticipants();
-        await LecPlayers();
-        await addPlayersToDB();
-    });
+            await LecSplits();
+            await LecParticipants();
+            await LecPlayers();
+            await addPlayersToDB();
+        },
+        {
+            timezone: "Europe/Rome",
+        }
+    );
 };
 
 const LecSplits = async () => {
@@ -62,3 +69,5 @@ const addPlayersToDB = async () => {
         console.error(error);
     }
 };
+
+

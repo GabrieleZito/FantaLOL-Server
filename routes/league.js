@@ -4,16 +4,20 @@ const router = express.Router();
 const pandascore = require("@api/developers-pandascore");
 const fs = require("fs");
 const db = require("../database.js");
-
-const current = "https://api.pandascore.co/lol/tournaments/running";
-const next = "https://api.pandascore.co/lol/tournaments/upcoming";
+const { getYearTournaments } = require("../utils/api.js");
 
 router.get("/tournaments/currentTournaments", async (req, res) => {
-    pandascore.auth(process.env.PANDASCORE_API);
-    pandascore
-        .get_lol_tournaments_running()
-        .then(({ data }) => res.json(data))
-        .catch((err) => res.status(400).json(err));
+    let tournaments = await getYearTournaments();
+    tournaments = tournaments.map((t) => t.title);
+    tournaments = tournaments.reduce((groups, tournament) => {
+        const key = tournament.Region;
+        if (!groups[key]) {
+            groups[key] = [];
+        }
+        groups[key].push(tournament);
+        return groups;
+    }, {});
+    res.json(tournaments);
 });
 
 router.get("/tournaments/nextTournaments", async (req, res) => {
@@ -28,7 +32,6 @@ router.get("/tournaments/nextTournaments", async (req, res) => {
 
 //TODO scaricare e salvare le immagini
 router.get("/tournaments/lec", async (req, res) => {
-
     let result = {};
 
     let data = fs.readFileSync(__dirname + "/../liquipedia/lec_splits.json");

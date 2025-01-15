@@ -4,6 +4,9 @@ const cors = require("cors");
 require("dotenv").config();
 const session = require("express-session");
 const db = require("./database.js");
+const fs = require("fs");
+const { default: axios } = require("axios");
+const { getDayMatches, getGamesFromMatchId, getTeamsFromGameId, getPlayerFromGameId } = require("./utils/api.js");
 
 //DATABASE
 const sequelize = require("./config/sequelize.js");
@@ -50,9 +53,55 @@ app.use("/users", usersRouter);
 app.use("/leaderboards", leadRouter);
 
 app.get("/prova", async (req, res) => {
-    const c = await db.getCurrentAuction(1);
-    res.json(c);
+    const x = await checkPoints();
+    res.json(x);
 });
+
+const checkPoints = async () => {
+    const tournaments = [
+        "LEC/2024 Season/Winter Playoffs",
+        "LEC/2024 Season/Winter Season",
+        "LEC/2024 Season/Spring Season",
+        "LEC/2024 Season/Spring Playoffs",
+        "LEC/2024 Season/Summer Season",
+        "LEC/2024 Season/Summer Playoffs",
+    ];
+    let matches = [];
+    for (let i = 0; i < tournaments.length; i++) {
+        const t = tournaments[i];
+        let res = await getDayMatches(t);
+        if (res.length > 0) {
+            res = res.map((t) => t.title);
+            matches.push(res);
+        }
+    }
+    matches = matches.flat();
+    matches = await Promise.all(
+        matches.map(async (m) => {
+            let games = await getGamesFromMatchId(m.MatchId);
+            games = games.map((g) => g.title);
+            games = await Promise.all(
+                games.map(async (g) => {
+                    let teams = await getTeamsFromGameId(g.GameId);
+                    teams = teams.map((t) => t.title);
+                    g.Teams = teams;
+                    teams = await Promise.all(
+                        teams.map(async (t) => {
+                            let players = await getPlayerFromGameId(t.GameId);
+                            players = players.map((p) => p.title);
+                            t.Players = players;
+                            return t;
+                        })
+                    );
+                    return g;
+                })
+            );
+            m.Games = games;
+            return m;
+        })
+    );
+    return matches;
+};
 
 const daily = require("./utils/dailyTasks.js");
 daily();
