@@ -29,21 +29,27 @@ const app = express();
 
 app.use(express.json());
 app.use(morgan("dev"));
+app.set("trust proxy", 1);
 app.use(
     cors({
-        origin: ["https://admin.socket.io", "http://localhost:5173"],
+        origin: ["https://admin.socket.io", process.env.CLIENT_URL],
         credentials: true,
     })
 );
 
 app.use(
     session({
-        secret: "fj35hdsfh544kjdska",
+        secret: process.env.SESSION_SECRET,
         resave: false,
         saveUninitialized: false,
+        proxy: true,
+        cookie: {
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            maxAge: 24 * 60 * 60 * 1000,
+        },
     })
 );
-app.set('trust proxy', true)
 app.use(passport.initialize());
 app.use(passport.session());
 
