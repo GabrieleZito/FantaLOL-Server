@@ -118,7 +118,7 @@ const { Server } = require("socket.io");
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
     cors: {
-        origin: ["https://admin.socket.io", "http://localhost:5173"],
+        origin: ["https://admin.socket.io", process.env.CLIENT_URL],
         credentials: true,
     },
 });
