@@ -21,10 +21,6 @@ Leaderboards.init(
         max_coins: {
             type: INTEGER,
         },
-        tournamentId: {
-            type: INTEGER,
-            allowNull: false,
-        },
     },
     {
         sequelize,

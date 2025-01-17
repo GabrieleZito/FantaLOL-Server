@@ -189,3 +189,27 @@ exports.getPlayerFromGameId = async (id) => {
 
     return axios.get(query).then((res) => res.data.cargoquery);
 };
+
+exports.getCurrentLeaguesFromTournaments = async () => {
+    const date = new Date();
+    const query =
+        "https://lol.fandom.com/api.php?action=cargoquery&format=json&tables=Tournaments=T&fields=T.Name, T.OverviewPage, T.DateStart, T.Date, T.DateStartFuzzy, T.League, T.StandardName," +
+        " T.Year, T.LeagueIconKey, T.AlternativeNames&limit=500&where=Year=" +
+        date.getFullYear() +
+        "&order_by=Date DESC&origin=*";
+    return axios.get(query).then((res) => res.data.cargoquery);
+};
+
+exports.getTournamentsNameFromLeague = async (league) => {
+    const date = new Date();
+    const query =
+        "https://lol.fandom.com/api.php?action=cargoquery&format=json&tables=Tournaments=T&fields=T.Name, T.OverviewPage, T.DateStart, T.Date, T.League, T.LeagueIconKey&limit=500" +
+        "&where=Year=" +
+        date.getFullYear() +
+        " AND League = '" +
+        league +
+        "'&origin=*";
+    console.log(query);
+
+    return axios.get(query).then((res) => res.data.cargoquery);
+};

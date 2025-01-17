@@ -9,7 +9,7 @@ const isLoggedIn = (req, res, next) => {
 
 router.post("/new", isLoggedIn, async (req, res) => {
     const opts = req.body;
-    //console.log(opts);
+    console.log(opts);
     try {
         const result = await db.createLeaderboard(opts);
         //console.log(result);

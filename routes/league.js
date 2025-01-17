@@ -4,7 +4,7 @@ const router = express.Router();
 const pandascore = require("@api/developers-pandascore");
 const fs = require("fs");
 const db = require("../database.js");
-const { getYearTournaments } = require("../utils/api.js");
+const { getYearTournaments, getCurrentLeaguesFromTournaments } = require("../utils/api.js");
 
 router.get("/tournaments/currentTournaments", async (req, res) => {
     let tournaments = await getYearTournaments();
@@ -18,6 +18,20 @@ router.get("/tournaments/currentTournaments", async (req, res) => {
         return groups;
     }, {});
     res.json(tournaments);
+});
+
+router.get("/currentLeagues", async (req, res) => {
+    let tournaments = await getCurrentLeaguesFromTournaments();
+    tournaments = tournaments.map((t) => t.title);
+    const leagues = new Set();
+    tournaments.forEach((t) => {
+        if (t.League) {
+            leagues.add(t.League);
+        }
+    });
+    //console.log(leagues);
+
+    res.json(Array.from(leagues));
 });
 
 router.get("/tournaments/nextTournaments", async (req, res) => {

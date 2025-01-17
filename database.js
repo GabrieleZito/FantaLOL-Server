@@ -9,11 +9,14 @@ const {
     Bids,
     Players,
     TeamPlayers,
+    Tournaments,
+    LeaderboardTournaments,
 } = require("./models/");
 const { verifyPassword, getPlayerFromJson } = require("./utils/misc");
 const sequelize = require("./config/sequelize");
 const { Op, QueryTypes, where } = require("sequelize");
 const fs = require("fs");
+const { getTournamentsNameFromLeague } = require("./utils/api");
 
 exports.checkUser = (username, password) => {
     return new Promise(async (resolve, reject) => {
@@ -142,8 +145,28 @@ exports.createLeaderboard = async (data) => {
             fee: data.fee,
             max_coins: data.coins,
             createdBy: data.idUser,
-            tournamentId: 1,
         });
+        let tournaments = await getTournamentsNameFromLeague(data.league);
+        tournaments = tournaments.map((t) => t.title);
+        for (let i = 0; i < tournaments.length; i++) {
+            const t = tournaments[i];
+
+            let tour = await Tournaments.findOne({
+                where: {
+                    OverviewPage: t.OverviewPage,
+                },
+            });
+            if (!tour) {
+                tour = await Tournaments.create({
+                    name: t.Name,
+                    OverviewPage: t.OverviewPage,
+                });
+            }
+            const LT = LeaderboardTournaments.create({
+                TournamentId: tour.id,
+                LeaderboardId: leaderboard.id,
+            });
+        }
         const team = await Teams.create({});
         const part = await Partecipations.create({
             coins: leaderboard.max_coins,
@@ -583,10 +606,10 @@ exports.getUserTeam = async (userId, leadId) => {
                 UserProfileId: userId,
                 LeaderboardId: leadId,
             },
-            attributes:["TeamId"],
+            attributes: ["TeamId"],
             include: {
                 model: Teams,
-                attributes:["id", "name"],
+                attributes: ["id", "name"],
                 include: {
                     model: Players,
                 },
@@ -597,6 +620,24 @@ exports.getUserTeam = async (userId, leadId) => {
         return part;
     } catch (error) {
         console.log(error);
+        throw error;
+    }
+};
+
+exports.getLeaderboardTournaments = async (leadId) => {
+    try {
+        const tours = await LeaderboardTournaments.findAll({
+            where: {
+                LeaderboardId: leadId,
+            },
+            include: {
+                model: Tournaments,
+            },
+        });
+        return tours;
+    } catch (error) {
+        console.log(error);
+
         throw error;
     }
 };

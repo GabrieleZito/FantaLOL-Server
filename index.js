@@ -6,7 +6,7 @@ const session = require("express-session");
 const db = require("./database.js");
 const fs = require("fs");
 const { default: axios } = require("axios");
-const { getDayMatches, getGamesFromMatchId, getTeamsFromGameId, getPlayerFromGameId } = require("./utils/api.js");
+const { getDayMatches, getGamesFromMatchId, getTeamsFromGameId, getPlayerFromGameId, getYearTournaments, getTournamentsNameFromLeague } = require("./utils/api.js");
 
 //DATABASE
 const sequelize = require("./config/sequelize.js");
@@ -59,19 +59,22 @@ app.use("/users", usersRouter);
 app.use("/leaderboards", leadRouter);
 
 app.get("/prova", async (req, res) => {
-    const x = await checkPoints();
-    res.json(x);
+    const p = await getTournamentsNameFromLeague("LoL EMEA Championship")
+    res.json(p);
+    /* const x = await checkPoints();
+    res.json(x); */
 });
 
 const checkPoints = async () => {
-    const tournaments = [
+    /* const tournaments = [
         "LEC/2024 Season/Winter Playoffs",
         "LEC/2024 Season/Winter Season",
         "LEC/2024 Season/Spring Season",
         "LEC/2024 Season/Spring Playoffs",
         "LEC/2024 Season/Summer Season",
         "LEC/2024 Season/Summer Playoffs",
-    ];
+    ]; */
+    const tournaments = await db.getLeaderboardTournaments()
     let matches = [];
     for (let i = 0; i < tournaments.length; i++) {
         const t = tournaments[i];
