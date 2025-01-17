@@ -69,5 +69,3 @@ const addPlayersToDB = async () => {
         console.error(error);
     }
 };
-
-
