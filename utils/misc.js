@@ -19,12 +19,3 @@ exports.verifyPassword = async (psw, hashedPsw) => {
     }
 };
 
-exports.getPlayerFromJson = (name) => {
-    let players = fs.readFileSync(__dirname+"/../liquipedia/lec_players.json")
-    players = JSON.parse(players)
-    for(p in players){
-        if (players[p].pagename == name) {
-            return players[p]
-        }
-    }
-}

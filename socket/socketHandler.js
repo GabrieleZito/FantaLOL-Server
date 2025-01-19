@@ -1,6 +1,6 @@
 const fs = require("fs");
 const db = require("../database.js");
-const { getPlayerFromJson } = require("../utils/misc.js");
+const { getPlayerById } = require("../utils/api.js");
 
 module.exports = function (io) {
     //leadId => [{username, userId}, {}, ...]
@@ -69,6 +69,7 @@ module.exports = function (io) {
             }
         });
 
+        //TODO saltare le aste se tutti gli utenti hanno il team completo per quel ruolo
         socket.on("nextPlayer", async (leadId) => {
             const closedAuctions = await db.getClosedAuctions(leadId);
             const closedPlayers = await Promise.all(
@@ -77,7 +78,7 @@ module.exports = function (io) {
                     return p;
                 })
             );
-            const allPlayers = await db.getPlayers();
+            const allPlayers = await db.getPlayersForLeaderboard(leadId);
 
             const existingIds = new Set(closedPlayers.map((p) => p.name));
             const missingPlayers = allPlayers.filter((player) => !existingIds.has(player.name));
@@ -89,7 +90,7 @@ module.exports = function (io) {
 
                 const auction = await db.newAuction(Date.now(), Date.now() + 120000, player2.id, leadId);
                 auction.dataValues.bids = [];
-                auction.dataValues.Player = getPlayerFromJson(player2.name);
+                auction.dataValues.Player = await getPlayerById(player2.name);
                 const timer = new AuctionTimer(io, auction.id, leadId);
                 auctionTimers.set(auction.id, timer);
                 timer.start();

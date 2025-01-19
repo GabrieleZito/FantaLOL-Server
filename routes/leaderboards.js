@@ -12,6 +12,7 @@ router.post("/new", isLoggedIn, async (req, res) => {
     console.log(opts);
     try {
         const result = await db.createLeaderboard(opts);
+        //const players =  av.(
         //console.log(result);
 
         res.json(result.leaderboard.id);

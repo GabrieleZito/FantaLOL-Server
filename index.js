@@ -66,23 +66,17 @@ app.use("/users", usersRouter);
 app.use("/leaderboards", leadRouter);
 
 app.get("/prova", async (req, res) => {
-    const p = await getTournamentsNameFromLeague("LoL EMEA Championship");
+    const p = await checkPoints();
     res.json(p);
-    /* const x = await checkPoints();
-    res.json(x); */
 });
 
 const checkPoints = async () => {
-    /* const tournaments = [
-        "LEC/2024 Season/Winter Playoffs",
-        "LEC/2024 Season/Winter Season",
-        "LEC/2024 Season/Spring Season",
-        "LEC/2024 Season/Spring Playoffs",
-        "LEC/2024 Season/Summer Season",
-        "LEC/2024 Season/Summer Playoffs",
-    ]; */
-    let tournaments = await db.getLeaderboardTournaments();
-    tournaments = tournaments.map((t) => t.OverviewPage);
+    let tournaments = await db.getLeaderboardTournaments(2);
+    //console.log(tournaments.Tournaments);
+
+    tournaments = tournaments.Tournaments.map((t) => t.OverviewPage);
+    //console.log(tournaments);
+
     let matches = [];
     for (let i = 0; i < tournaments.length; i++) {
         const t = tournaments[i];

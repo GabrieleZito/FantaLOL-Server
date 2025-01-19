@@ -11,6 +11,7 @@ const Bids = require("./bids");
 const TeamPlayers = require("./teamplayers");
 const Tournaments = require("./tournaments");
 const LeaderboardTournaments = require("./LeaderboardTournaments");
+const LeaderboardPlayers = require("./leaderboardplayers");
 
 UserProfile.belongsToMany(UserProfile, { through: Friendships, as: "Friends" });
 UserProfile.belongsToMany(Leaderboards, {
@@ -52,6 +53,9 @@ Bids.belongsTo(UserProfile);
 Tournaments.belongsToMany(Leaderboards, { through: LeaderboardTournaments });
 Leaderboards.belongsToMany(Tournaments, { through: LeaderboardTournaments });
 
+Leaderboards.belongsToMany(Players, { through: LeaderboardPlayers });
+Players.belongsToMany(Leaderboards, { through: LeaderboardPlayers });
+
 module.exports = {
     UserProfile,
     Friendships,
@@ -65,4 +69,5 @@ module.exports = {
     TeamPlayers,
     Tournaments,
     LeaderboardTournaments,
+    LeaderboardPlayers,
 };

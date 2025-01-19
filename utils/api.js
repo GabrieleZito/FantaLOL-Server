@@ -44,66 +44,18 @@ exports.getLecParticipants = () => {
         });
 };
 
-exports.getLecPlayers = async () => {
-    console.log("DEntro getLecPlayers");
-
-    let players = [];
-    if (!fs.existsSync(__dirname + "/../liquipedia/lec_splits.json")) {
-        throw "Il file lec_splits.json non esiste";
-    } else {
-        const today = new Date();
-        let file = fs.readFileSync(__dirname + "/../liquipedia/lec_splits.json");
-        file = JSON.parse(file);
-        //prende il torneo prossimo più vicino
-        for (let i = 0; i < file.length; i++) {
-            const e = file[i];
-            startdate = new Date(e.startdate);
-            if (startdate < today) {
-                continue;
-            } else {
-                const tournament = e.pagename;
-                let file2 = fs.readFileSync(__dirname + "/../liquipedia/lec_participants.json");
-                file2 = JSON.parse(file2);
-
-                for (let y = 0; y < file2.length; y++) {
-                    const e2 = file2[y];
-                    if (e2.pagename == tournament) {
-                        for (var j in e2.opponentplayers) {
-                            //console.log(e2.opponentplayers[j]);
-                            if (
-                                j.includes("p") &&
-                                !j.includes("dn") &&
-                                !j.includes("flag") &&
-                                !j.includes("team") &&
-                                !j.includes("template")
-                            ) {
-                                players.push(e2.opponentplayers[j]);
-                                //console.log(e2.opponentplayers[j]);
-                            }
-                        }
-                    }
-                }
-                break;
-            }
-        }
-    }
-    //console.log(players);
-    let players2 = [];
-
-    for (let p = 0; p < players.length; p++) {
-        const e = players[p];
-        //console.log(e);
-
-        const player = await this.getPlayerByPagename(e);
-        players2.push(player);
-    }
-
-    return players2;
-};
 
 exports.getPlayerByPagename = (name) => {
     return axios
         .get("https://api.liquipedia.net/api/v3/player?wiki=leagueoflegends&conditions=[[pagename::" + name + "]]", {
+            headers: headers,
+        })
+        .then((res) => res.data.result[0]);
+};
+
+exports.getPlayerById = (id) => {
+    return axios
+        .get("https://api.liquipedia.net/api/v3/player?wiki=leagueoflegends&conditions=[[id::" + id + "]]", {
             headers: headers,
         })
         .then((res) => res.data.result[0]);
@@ -137,8 +89,8 @@ exports.getYearTournaments = async () => {
 
 exports.getDayMatches = async (t) => {
     const date = new Date();
-    const yesterday = "2024-01-15"; //date.getFullYear() + "-" + (date.getMonth() + 1) + "-" +(date.getDate() - 1);
-    const today = "2024-01-16"; // date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate();
+    const yesterday = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + (date.getDate() - 1);
+    const today = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate();
     //console.log(yesterday);
 
     const query =
@@ -211,5 +163,23 @@ exports.getTournamentsNameFromLeague = async (league) => {
         "'&origin=*";
     console.log(query);
 
+    return axios.get(query).then((res) => res.data.cargoquery);
+};
+
+exports.getStandingsFromOverviewPage = async (op) => {
+    const query =
+        "https://lol.fandom.com/api.php?action=cargoquery&format=json&tables=Standings=S&fields=S.OverviewPage, S.Team, S.PageAndTeam, S.N, S.Place, S.WinSeries, S.LossSeries, S.TieSeries, " +
+        "S.WinGames, S.LossGames,S.Points, S.PointsTiebreaker, S.Streak, S.StreakDirection&limit=500&where=OverviewPage= '" +
+        op +
+        "'&origin=*";
+    return axios.get(query).then((res) => res.data.cargoquery);
+};
+
+exports.getPlayersOfTeam = async (team) => {
+    const query =
+        "https://lol.fandom.com/api.php?action=cargoquery&format=json&tables=Players=PL&fields=PL.ID, PL.OverviewPage, PL.Player, PL.Image, PL.Name, PL.NativeName, PL.NameFull, PL.Country," +
+        " PL.Nationality, PL.Age, PL.Birthdate, PL.Team, PL.Team2, PL.Role, PL.IsRetired&limit=500&where=Team= '" +
+        team +
+        "'&origin=* ";
     return axios.get(query).then((res) => res.data.cargoquery);
 };

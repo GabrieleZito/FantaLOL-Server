@@ -44,26 +44,5 @@ router.get("/tournaments/nextTournaments", async (req, res) => {
         .catch((err) => res.status(400).json(err));
 });
 
-//TODO scaricare e salvare le immagini
-router.get("/tournaments/lec", async (req, res) => {
-    let result = {};
-
-    let data = fs.readFileSync(__dirname + "/../liquipedia/lec_splits.json");
-    data = JSON.parse(data);
-    result.splits = data;
-
-    let file = fs.readFileSync(__dirname + "/../liquipedia/lec_participants.json");
-    file = JSON.parse(file);
-    result.participants = file;
-
-    const result2 = result.splits.map((x) => {
-        x.participants = result.participants.filter((y) => x.pagename == y.pagename);
-        return x;
-    });
-
-    res.json(result2);
-
-    //const teams = await getLecPartecipants();
-});
 
 module.exports = router;

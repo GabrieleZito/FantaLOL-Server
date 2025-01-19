@@ -11,12 +11,13 @@ const {
     TeamPlayers,
     Tournaments,
     LeaderboardTournaments,
+    LeaderboardPlayers,
 } = require("./models/");
-const { verifyPassword, getPlayerFromJson } = require("./utils/misc");
+const { verifyPassword } = require("./utils/misc");
 const sequelize = require("./config/sequelize");
 const { Op, QueryTypes, where } = require("sequelize");
 const fs = require("fs");
-const { getTournamentsNameFromLeague } = require("./utils/api");
+const { getTournamentsNameFromLeague, getStandingsFromOverviewPage, getPlayersOfTeam, getPlayerById } = require("./utils/api");
 
 exports.checkUser = (username, password) => {
     return new Promise(async (resolve, reject) => {
@@ -369,19 +370,7 @@ exports.getCurrentAuction = async (leadId) => {
             const result = auction.dataValues;
             result.bids = bids.map((b) => b.dataValues);
             //console.log(result);
-            if (fs.existsSync(__dirname + "/liquipedia/lec_players.json")) {
-                //console.log("dentro if");
-
-                let file = fs.readFileSync(__dirname + "/liquipedia/lec_players.json");
-                file = JSON.parse(file);
-                //console.log(file[0].id);
-
-                file.forEach((p) => {
-                    if (p && p.id == result.Player.name) {
-                        result.Player = p;
-                    }
-                });
-            }
+            result.Player = await getPlayerById(result.Player.name);
             return result;
         } else return null;
     } catch (err) {
@@ -576,6 +565,23 @@ exports.getPlayers = async () => {
     }
 };
 
+exports.getPlayersForLeaderboard = async (leadId) => {
+    try {
+        const players = await Players.findAll({
+            include: {
+                model: Leaderboards,
+                where: {
+                    id: leadId,
+                },
+            },
+        });
+        return players;
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+};
+
 exports.getPlayerByName = async (name) => {
     try {
         const player = await Players.findOne({
@@ -615,8 +621,8 @@ exports.getUserTeam = async (userId, leadId) => {
                 },
             },
         });
-        //console.log(part.Team.Players);
-        //part.Team.Players = part.Team.Players.map(p => getPlayerFromJson(p.name))
+        console.log(part);
+
         return part;
     } catch (error) {
         console.log(error);
@@ -626,9 +632,9 @@ exports.getUserTeam = async (userId, leadId) => {
 
 exports.getLeaderboardTournaments = async (leadId) => {
     try {
-        const tours = await LeaderboardTournaments.findAll({
+        const tours = await Leaderboards.findOne({
             where: {
-                LeaderboardId: leadId,
+                id: leadId,
             },
             include: {
                 model: Tournaments,
@@ -638,6 +644,77 @@ exports.getLeaderboardTournaments = async (leadId) => {
     } catch (error) {
         console.log(error);
 
+        throw error;
+    }
+};
+
+exports.addPlayersToDB = async (leadId) => {
+    try {
+        let tournaments = await this.getLeaderboardTournaments(leadId);
+        tournaments = tournaments.Tournaments.map((t) => t.OverviewPage);
+        let teams = new Set();
+        for (let i = 0; i < tournaments.length; i++) {
+            const t = tournaments[i];
+
+            let standings = await getStandingsFromOverviewPage(t);
+            //console.log(standings);
+            standings.forEach((s) => {
+                if (s.title.Team != "TBD") {
+                    teams.add(s.title.Team);
+                }
+            });
+        }
+        let players = [];
+        for (const t of teams) {
+            //const t = teams[i];
+            let p = await getPlayersOfTeam(t);
+            //console.log(p);
+            p.forEach((p) => {
+                if (
+                    p.title.Role == "Support" ||
+                    p.title.Role == "Bot" ||
+                    p.title.Role == "Mid" ||
+                    p.title.Role == "Jungle" ||
+                    p.title.Role == "Top"
+                ) {
+                    players.push({ name: p.title.ID, role: p.title.Role });
+                }
+            });
+        }
+
+        for (let i = 0; i < players.length; i++) {
+            const p = players[i];
+            let player = await Players.findOne({
+                where: {
+                    name: p.name,
+                },
+            });
+            if (!player) {
+                player = await Players.create({
+                    name: p.name,
+                    role: p.role,
+                });
+            }
+            const LP = await LeaderboardPlayers.create({
+                LeaderboardId: leadId,
+                PlayerId: player.id,
+            });
+        }
+
+        console.log(players);
+        return players;
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+};
+
+exports.getLeaderboards = async () => {
+    try {
+        const leads = await Leaderboards.findAll();
+        return leads;
+    } catch (error) {
+        console.log(error);
         throw error;
     }
 };
