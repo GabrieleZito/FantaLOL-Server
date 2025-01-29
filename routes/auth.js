@@ -22,6 +22,7 @@ router.post("/register", async (req, res) => {
                     email: profile.email,
                     username: profile.username,
                     id: profile.id,
+                    profilePicture: profile.profilePicture,
                 });
             });
         } catch (e) {

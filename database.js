@@ -288,12 +288,19 @@ exports.getInvites = async (userId) => {
             include: {
                 model: Leaderboards,
                 attributes: ["id", "name", "fee", "createdBy"],
+                include: {
+                    model: UserProfile,
+                    as: "Created",
+                    attributes: ["username"],
+                },
             },
         });
         //console.log(invites);
 
         return invites;
     } catch (error) {
+        console.log(error);
+
         throw error;
     }
 };
@@ -544,7 +551,7 @@ exports.getClosedAuctions = async (leadId) => {
         const auctions = await Auctions.findAll({
             where: {
                 LeaderboardId: leadId,
-                status: "closed",
+                status: { [Op.or]: ["closed", "cancelled"] },
             },
             include: Players,
         });
