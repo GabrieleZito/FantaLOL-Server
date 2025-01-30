@@ -90,6 +90,7 @@ module.exports = function (io) {
 
                 const auction = await db.newAuction(Date.now(), Date.now() + 120000, player2.id, leadId);
                 auction.dataValues.bids = [];
+                console.log(player2.name);
                 auction.dataValues.Player = await getPlayerById(player2.name);
                 const timer = new AuctionTimer(io, auction.id, leadId);
                 auctionTimers.set(auction.id, timer);
@@ -165,8 +166,7 @@ module.exports = function (io) {
         constructor(io, auctionId, leadId) {
             this.io = io;
             this.auctionId = auctionId;
-            //TODO cambiare a 1 minuto
-            this.duration = 1 * 10;
+            this.duration = 1 * 60;
             this.endTime = null;
             this.timer = null;
             this.leadId = leadId;

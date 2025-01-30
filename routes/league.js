@@ -1,9 +1,5 @@
-const { default: axios } = require("axios");
 const express = require("express");
 const router = express.Router();
-const pandascore = require("@api/developers-pandascore");
-const fs = require("fs");
-const db = require("../database.js");
 const { getYearTournaments, getCurrentLeaguesFromTournaments } = require("../utils/api.js");
 
 router.get("/tournaments/currentTournaments", async (req, res) => {
@@ -33,16 +29,5 @@ router.get("/currentLeagues", async (req, res) => {
 
     res.json(Array.from(leagues));
 });
-
-router.get("/tournaments/nextTournaments", async (req, res) => {
-    //console.log(req.user);
-
-    pandascore.auth(process.env.PANDASCORE_API);
-    pandascore
-        .get_lol_tournaments_upcoming()
-        .then(({ data }) => res.json(data))
-        .catch((err) => res.status(400).json(err));
-});
-
 
 module.exports = router;

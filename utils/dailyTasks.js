@@ -1,8 +1,5 @@
 const cron = require("node-cron");
-const fs = require("fs");
-const { getLecTournaments, getLecParticipants, getDayMatches } = require("./api");
 const db = require("../database.js");
-const { default: axios } = require("axios");
 
 module.exports = async () => {
     cron.schedule(

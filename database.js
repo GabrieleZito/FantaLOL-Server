@@ -106,7 +106,7 @@ exports.acceptFriendRequest = async (id1, id2) => {
         throw e;
     }
 };
-//TODO togliere informazioni sensibili
+
 exports.getFriends = async (id) => {
     try {
         const friendships = await Friendships.findAll({
@@ -124,6 +124,7 @@ exports.getFriends = async (id) => {
                         where: {
                             id: friendId,
                         },
+                        attributes: ["bio", "birthday", "email", "firstName", "id", "lastName", "profilePicture", "username"],
                     });
                     //console.log(friend);
 
@@ -176,6 +177,9 @@ exports.createLeaderboard = async (data) => {
             LeaderboardId: leaderboard.id,
             TeamId: team.id,
         });
+
+        this.addPlayersToDB(leaderboard.id);
+
         return { leaderboard, part };
     } catch (error) {
         //console.log(error);
@@ -324,7 +328,6 @@ exports.acceptInvite = async (id) => {
     }
 };
 
-//TODO togliere info non necessarie da UserProfile
 exports.getFriendLeaderboards = async (id) => {
     try {
         //const user = await UserProfile.findByPk(id);
@@ -332,6 +335,7 @@ exports.getFriendLeaderboards = async (id) => {
             where: {
                 id: id,
             },
+            attributes: { exclude: ["passwordHash", "createdAt", "updatedAt"] },
             include: {
                 model: Leaderboards,
                 as: "Partecipate",
@@ -702,10 +706,20 @@ exports.addPlayersToDB = async (leadId) => {
                     role: p.role,
                 });
             }
-            const LP = await LeaderboardPlayers.create({
-                LeaderboardId: leadId,
-                PlayerId: player.id,
+            /* console.log("PLAYER");
+            console.log(player); */
+            const LP = await LeaderboardPlayers.findOne({
+                where: {
+                    LeaderboardId: leadId,
+                    PlayerId: player.id,
+                },
             });
+            if (!LP) {
+                const LP = await LeaderboardPlayers.create({
+                    LeaderboardId: leadId,
+                    PlayerId: player.id,
+                });
+            }
         }
 
         console.log(players);
