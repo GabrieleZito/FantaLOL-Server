@@ -8,6 +8,9 @@ Players.init(
         name: {
             type: STRING,
         },
+        longName: {
+            type: STRING,
+        },
         role: {
             type: STRING,
         },

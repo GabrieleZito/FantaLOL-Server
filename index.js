@@ -4,8 +4,6 @@ const cors = require("cors");
 require("dotenv").config();
 const session = require("express-session");
 const db = require("./database.js");
-const fs = require("fs");
-const { default: axios } = require("axios");
 const {
     getDayMatches,
     getGamesFromMatchId,

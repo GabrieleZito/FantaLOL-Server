@@ -670,6 +670,8 @@ exports.addPlayersToDB = async (leadId) => {
             let standings = await getStandingsFromOverviewPage(t);
             //console.log(standings);
             standings.forEach((s) => {
+                console.log("Standings");
+                console.log(s.title);
                 if (s.title.Team != "TBD") {
                     teams.add(s.title.Team);
                 }
@@ -688,7 +690,7 @@ exports.addPlayersToDB = async (leadId) => {
                     p.title.Role == "Jungle" ||
                     p.title.Role == "Top"
                 ) {
-                    players.push({ name: p.title.ID, role: p.title.Role });
+                    players.push({ name: p.title.ID, role: p.title.Role, longName: p.title.OverviewPage.replaceAll(" ", "_") });
                 }
             });
         }
@@ -704,6 +706,7 @@ exports.addPlayersToDB = async (leadId) => {
                 player = await Players.create({
                     name: p.name,
                     role: p.role,
+                    longName: p.longName,
                 });
             }
             /* console.log("PLAYER");
