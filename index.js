@@ -4,6 +4,8 @@ const cors = require("cors");
 require("dotenv").config();
 const session = require("express-session");
 const db = require("./database.js");
+const fs = require("fs");
+
 const {
     getDayMatches,
     getGamesFromMatchId,
@@ -64,12 +66,23 @@ app.use("/users", usersRouter);
 app.use("/leaderboards", leadRouter);
 
 app.get("/prova", async (req, res) => {
-    const p = await checkPoints();
+    const p = await getInfoMatches();
     res.json(p);
 });
 
 const checkPoints = async () => {
-    let tournaments = await db.getLeaderboardTournaments(2);
+    const leads = await db.getLeaderboards();
+    let c = [];
+    for (let i = 0; i < leads.length; i++) {
+        const e = leads[i];
+        const d = await db.getLeaderboardTournaments(e.id);
+        c.push(d);
+    }
+    return c;
+};
+
+const getInfoMatches = async () => {
+    let tournaments = await db.getLeaderboardTournaments(1);
     //console.log(tournaments.Tournaments);
 
     tournaments = tournaments.Tournaments.map((t) => t.OverviewPage);
@@ -109,6 +122,20 @@ const checkPoints = async () => {
             return m;
         })
     );
+    //console.log(matches);
+    if (matches) {
+        try {
+            matches.forEach((m) => {
+                fs.mkdirSync(__dirname + "/data/matches/" + m.OverviewPage, { recursive: true });
+                fs.writeFileSync(
+                    __dirname + "/data/matches/" + m.OverviewPage + "/" + m.Team1 + "-" + m.Team2 + ".json",
+                    JSON.stringify(m)
+                );
+            });
+        } catch (error) {
+            console.log(error);
+        }
+    }
     return matches;
 };
 

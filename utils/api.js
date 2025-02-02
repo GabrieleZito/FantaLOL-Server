@@ -44,7 +44,6 @@ exports.getLecParticipants = () => {
         });
 };
 
-
 exports.getPlayerByPagename = (name) => {
     return axios
         .get("https://api.liquipedia.net/api/v3/player?wiki=leagueoflegends&conditions=[[pagename::" + name + "]]", {
@@ -89,9 +88,11 @@ exports.getYearTournaments = async () => {
 
 exports.getDayMatches = async (t) => {
     const date = new Date();
-    const yesterday = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + (date.getDate() - 1);
+    let yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday = yesterday.getFullYear() + "-" + (yesterday.getMonth() + 1) + "-" + yesterday.getDate();
     const today = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate();
-    //console.log(yesterday);
+    console.log(yesterday);
 
     const query =
         "https://lol.fandom.com/api.php?action=cargoquery&format=json&tables=MatchSchedule=MS&fields=MS.Team1,MS.Team2,MS.OverviewPage, MS.DateTime_UTC,MS.Team1Final, MS.Team2Final," +
@@ -101,8 +102,10 @@ exports.getDayMatches = async (t) => {
         t +
         "'  AND DateTime_UTC>'" +
         yesterday +
+        //"2025-02-01" +
         "' AND DateTime_UTC<'" +
         today +
+        //"2025-02-02" +
         "'&order_by=DateTime_UTC ASC&origin=*";
 
     return axios.get(query).then((res) => res.data.cargoquery);

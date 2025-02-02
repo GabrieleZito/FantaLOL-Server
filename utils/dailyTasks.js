@@ -3,11 +3,13 @@ const db = require("../database.js");
 
 module.exports = async () => {
     cron.schedule(
+        //"0,30 * * * * *",
         "0 0 1 * * *",
         async () => {
             console.log("Daily Tasks " + new Date());
 
             await checkNewPlayers();
+            await checkPoints()
         },
         {
             timezone: "Europe/Rome",
@@ -22,3 +24,7 @@ const checkNewPlayers = async () => {
         db.addPlayersToDB(l.id);
     }
 };
+
+const checkPoints = async () => {
+    
+}

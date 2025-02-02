@@ -15,9 +15,18 @@ const {
 } = require("./models/");
 const { verifyPassword } = require("./utils/misc");
 const sequelize = require("./config/sequelize");
-const { Op, QueryTypes, where } = require("sequelize");
+const { Op, QueryTypes } = require("sequelize");
 const fs = require("fs");
-const { getTournamentsNameFromLeague, getStandingsFromOverviewPage, getPlayersOfTeam, getPlayerById } = require("./utils/api");
+const {
+    getTournamentsNameFromLeague,
+    getStandingsFromOverviewPage,
+    getPlayersOfTeam,
+    getPlayerById,
+    getDayMatches,
+    getGamesFromMatchId,
+    getTeamsFromGameId,
+    getPlayerFromGameId,
+} = require("./utils/api");
 
 exports.checkUser = (username, password) => {
     return new Promise(async (resolve, reject) => {
@@ -670,8 +679,8 @@ exports.addPlayersToDB = async (leadId) => {
             let standings = await getStandingsFromOverviewPage(t);
             //console.log(standings);
             standings.forEach((s) => {
-                console.log("Standings");
-                console.log(s.title);
+                //console.log("Standings");
+                //console.log(s.title);
                 if (s.title.Team != "TBD") {
                     teams.add(s.title.Team);
                 }
@@ -725,7 +734,7 @@ exports.addPlayersToDB = async (leadId) => {
             }
         }
 
-        console.log(players);
+        //console.log(players);
         return players;
     } catch (error) {
         console.log(error);
@@ -741,4 +750,61 @@ exports.getLeaderboards = async () => {
         console.log(error);
         throw error;
     }
+};
+const getInfoMatches = async () => {
+    let tournaments = await db.getLeaderboardTournaments(1);
+    //console.log(tournaments.Tournaments);
+
+    tournaments = tournaments.Tournaments.map((t) => t.OverviewPage);
+    //console.log(tournaments);
+
+    let matches = [];
+    for (let i = 0; i < tournaments.length; i++) {
+        const t = tournaments[i];
+        let res = await getDayMatches(t);
+        if (res.length > 0) {
+            res = res.map((t) => t.title);
+            matches.push(res);
+        }
+    }
+    matches = matches.flat();
+    matches = await Promise.all(
+        matches.map(async (m) => {
+            let games = await getGamesFromMatchId(m.MatchId);
+            games = games.map((g) => g.title);
+            games = await Promise.all(
+                games.map(async (g) => {
+                    let teams = await getTeamsFromGameId(g.GameId);
+                    teams = teams.map((t) => t.title);
+                    g.Teams = teams;
+                    teams = await Promise.all(
+                        teams.map(async (t) => {
+                            let players = await getPlayerFromGameId(t.GameId);
+                            players = players.map((p) => p.title);
+                            t.Players = players;
+                            return t;
+                        })
+                    );
+                    return g;
+                })
+            );
+            m.Games = games;
+            return m;
+        })
+    );
+    //console.log(matches);
+    if (matches) {
+        console.log(matches[0]);
+        fs.writeFile(
+            __dirname + "/data/matches/" + matches[0].ShownName + " " + matches[0]["DateTime UTC"].substring(0, 10) + ".json",
+            JSON.stringify(matches),
+            (err) => {
+                if (err) console.log(err);
+                else {
+                    console.log("File written successfully\n");
+                }
+            }
+        );
+    }
+    return matches;
 };
