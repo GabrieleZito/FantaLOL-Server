@@ -92,7 +92,7 @@ exports.getDayMatches = async (t) => {
     yesterday.setDate(yesterday.getDate() - 1);
     yesterday = yesterday.getFullYear() + "-" + (yesterday.getMonth() + 1) + "-" + yesterday.getDate();
     const today = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate();
-    console.log(yesterday);
+    //console.log(yesterday);
 
     const query =
         "https://lol.fandom.com/api.php?action=cargoquery&format=json&tables=MatchSchedule=MS&fields=MS.Team1,MS.Team2,MS.OverviewPage, MS.DateTime_UTC,MS.Team1Final, MS.Team2Final," +
@@ -101,11 +101,11 @@ exports.getDayMatches = async (t) => {
         "&join_on&limit=500&where=OverviewPage = '" +
         t +
         "'  AND DateTime_UTC>'" +
-        yesterday +
-        //"2025-02-01" +
+        //yesterday +
+        "2025-02-01" +
         "' AND DateTime_UTC<'" +
-        today +
-        //"2025-02-02" +
+        //today +
+        "2025-02-02" +
         "'&order_by=DateTime_UTC ASC&origin=*";
 
     return axios.get(query).then((res) => res.data.cargoquery);

@@ -12,6 +12,7 @@ const {
     Tournaments,
     LeaderboardTournaments,
     LeaderboardPlayers,
+    Points,
 } = require("./models/");
 const { verifyPassword } = require("./utils/misc");
 const sequelize = require("./config/sequelize");
@@ -606,7 +607,7 @@ exports.getPlayerByName = async (name) => {
     try {
         const player = await Players.findOne({
             where: {
-                name: name,
+                [Op.or]: [{ name: name }, { longName: name }],
             },
         });
         return player;
@@ -751,60 +752,126 @@ exports.getLeaderboards = async () => {
         throw error;
     }
 };
-const getInfoMatches = async () => {
-    let tournaments = await db.getLeaderboardTournaments(1);
-    //console.log(tournaments.Tournaments);
 
-    tournaments = tournaments.Tournaments.map((t) => t.OverviewPage);
-    //console.log(tournaments);
-
-    let matches = [];
-    for (let i = 0; i < tournaments.length; i++) {
-        const t = tournaments[i];
-        let res = await getDayMatches(t);
-        if (res.length > 0) {
-            res = res.map((t) => t.title);
-            matches.push(res);
+exports.setActivePlayers = async (userId, leadId, team) => {
+    const part = await Partecipations.findOne({
+        where: {
+            UserProfileId: userId,
+            LeaderboardId: leadId,
+        },
+        attributes: ["TeamId"],
+    });
+    await TeamPlayers.update(
+        { active: 0 },
+        {
+            where: {},
         }
-    }
-    matches = matches.flat();
-    matches = await Promise.all(
-        matches.map(async (m) => {
-            let games = await getGamesFromMatchId(m.MatchId);
-            games = games.map((g) => g.title);
-            games = await Promise.all(
-                games.map(async (g) => {
-                    let teams = await getTeamsFromGameId(g.GameId);
-                    teams = teams.map((t) => t.title);
-                    g.Teams = teams;
-                    teams = await Promise.all(
-                        teams.map(async (t) => {
-                            let players = await getPlayerFromGameId(t.GameId);
-                            players = players.map((p) => p.title);
-                            t.Players = players;
-                            return t;
-                        })
-                    );
-                    return g;
-                })
-            );
-            m.Games = games;
-            return m;
-        })
     );
-    //console.log(matches);
-    if (matches) {
-        console.log(matches[0]);
-        fs.writeFile(
-            __dirname + "/data/matches/" + matches[0].ShownName + " " + matches[0]["DateTime UTC"].substring(0, 10) + ".json",
-            JSON.stringify(matches),
-            (err) => {
-                if (err) console.log(err);
-                else {
-                    console.log("File written successfully\n");
-                }
+    for (t in team) {
+        //console.log(team[t]);
+        const TP = await TeamPlayers.update(
+            { active: 1 },
+            {
+                where: {
+                    TeamId: part.TeamId,
+                    PlayerId: team[t],
+                },
             }
         );
     }
-    return matches;
+    //console.log(part);
+    return part;
+};
+
+exports.setPoints = async (rule, player, data = 0) => {
+    try {
+        const p = await this.getPlayerByName(player);
+        switch (rule) {
+            case "MVP":
+                const mvp = await Points.create({
+                    points: 25,
+                    description: "for being MVP",
+                    PlayerId: p.id,
+                });
+                return mvp;
+
+            case "Kills":
+                const kills = await Points.create({
+                    points: 3 * data,
+                    description: "for getting " + data + " kills",
+                    PlayerId: p.id,
+                });
+                return kills;
+
+            case "Gold":
+                let gpoints = 0;
+                if (data > 10000) {
+                    gpoints += 5;
+                    let remainder = data - 10000;
+                    let mult = Math.floor(remainder / 1000);
+                    gpoints += mult * 3;
+                    const gold = await Points.create({
+                        points: gpoints,
+                        description: "for earning " + data + " gold",
+                        PlayerId: p.id,
+                    });
+                    return gold;
+                }
+                return null;
+
+            case "Vision":
+                let vpoints = 0;
+                if (data > 90) {
+                    vpoints += 5;
+                    let remainder = data - 90;
+                    let mult = Math.floor(remainder / 10);
+                    vpoints += mult * 2;
+                    const vision = await Points.create({
+                        points: vpoints,
+                        description: "for gaining " + data + " vision score",
+                        PlayerId: p.id,
+                    });
+                    return vision;
+                }
+                return null;
+
+            case "Damage":
+                let dpoints = 0;
+                if (data > 10000) {
+                    dpoints += 5;
+                    let remainder = data - 10000;
+                    let mult = Math.floor(remainder / 2000);
+                    dpoints += mult * 2;
+                    const damage = await Points.create({
+                        points: dpoints,
+                        description: "for dealing " + data + " damage to champions",
+                        PlayerId: p.id,
+                    });
+                    return damage;
+                }
+                return null;
+
+            case "CS":
+                let cpoints = 0;
+                if (data > 200) {
+                    cpoints += 5;
+                    let remainder = data - 200;
+                    let mult = Math.floor(remainder / 50);
+                    cpoints += mult * 2;
+                    const cs = await Points.create({
+                        points: cpoints,
+                        description: "for killing " + data + " cs",
+                        PlayerId: p.id,
+                    });
+                    return cs;
+                }
+                return null;
+
+            default:
+                return null;
+        }
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
 };

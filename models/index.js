@@ -12,6 +12,8 @@ const TeamPlayers = require("./teamplayers");
 const Tournaments = require("./tournaments");
 const LeaderboardTournaments = require("./LeaderboardTournaments");
 const LeaderboardPlayers = require("./leaderboardplayers");
+const Points = require("./points");
+const TeamPoints = require("./teampoints");
 
 UserProfile.belongsToMany(UserProfile, { through: Friendships, as: "Friends" });
 UserProfile.belongsToMany(Leaderboards, {
@@ -56,6 +58,10 @@ Leaderboards.belongsToMany(Tournaments, { through: LeaderboardTournaments });
 Leaderboards.belongsToMany(Players, { through: LeaderboardPlayers });
 Players.belongsToMany(Leaderboards, { through: LeaderboardPlayers });
 
+Points.belongsToMany(Teams, { through: TeamPoints });
+Teams.belongsToMany(Points, { through: TeamPoints });
+Points.belongsTo(Players);
+
 module.exports = {
     UserProfile,
     Friendships,
@@ -70,4 +76,5 @@ module.exports = {
     Tournaments,
     LeaderboardTournaments,
     LeaderboardPlayers,
+    Points,
 };

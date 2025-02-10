@@ -70,18 +70,29 @@ router.get("/user/:id/friends", isLoggedIn, async (req, res) => {
     }
 });
 
-router.get("/:id/team", isLoggedIn, async (req, res) => {
-    const { id } = req.params;
+router.get("/:leadId/team", isLoggedIn, async (req, res) => {
+    const { leadId } = req.params;
     const userId = req.user.id;
 
     try {
-        const team = await db.getUserTeam(userId, id);
+        const team = await db.getUserTeam(userId, leadId);
 
         res.json(team);
     } catch (error) {
         console.log(error);
         res.status(400).json({ err: error });
     }
+});
+
+router.post("/:leadId/team", isLoggedIn, async (req, res) => {
+    const { leadId } = req.params;
+    const userId = req.user.id;
+    const team = req.body;
+    //console.log(team);
+
+    const result = await db.setActivePlayers(userId, leadId, team);
+
+    res.json(result);
 });
 
 module.exports = router;
