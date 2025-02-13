@@ -63,114 +63,7 @@ app.get("/prova", async (req, res) => {
     res.json(p);
 });
 
-const checkPoints = async () => {
-    const matches = await getInfoMatches();
-    let points = [];
-    if (matches && matches.length > 0) {
-        for (let i = 0; i < matches.length; i++) {
-            const m = matches[i];
-            if (m.MVP) {
-                const mvp = await db.setPoints("MVP", m.MVP);
-                points.push(mvp);
-            }
-            for (let j = 0; j < m.Games.length; j++) {
-                const g = m.Games[j];
-                if (g.MVP) {
-                    const mvp = await db.setPoints("MVP", g.MVP);
-                    points.push(mvp);
-                }
-                for (let k = 0; k < g.Teams.length; k++) {
-                    const t = g.Teams[k];
-                    //TODO spazio per eventualmente punti della squadra
-                    for (let x = 0; x < t.Players.length; x++) {
-                        const p = t.Players[x];
-                        const kills = await db.setPoints("Kills", p.Name, parseInt(p.Kills));
-                        points.push(kills);
-                        const gold = await db.setPoints("Gold", p.Name, parseInt(p.Gold));
-                        points.push(gold);
-                        const cs = await db.setPoints("CS", p.Name, parseInt(p.CS));
-                        points.push(cs);
-                        const damage = await db.setPoints("Damage", p.Name, parseInt(p.DamageToChampions));
-                        points.push(damage);
-                        const vision = await db.setPoints("Vision", p.Name, parseInt(p.VisionScore));
-                        points.push(vision);
-                    }
-                }
-            }
-        }
-    }
-    return points;
-};
 
-const getInfoMatches = async () => {
-    const leads = await db.getLeaderboards();
-    let allMatches = [];
-    for (let i = 0; i < leads.length; i++) {
-        const e = leads[i];
-
-        let tournaments = await db.getLeaderboardTournaments(e.id);
-        //console.log(tournaments.Tournaments);
-
-        tournaments = tournaments.Tournaments.map((t) => t.OverviewPage);
-        //console.log(tournaments);
-
-        let matches = [];
-        for (let i = 0; i < tournaments.length; i++) {
-            const t = tournaments[i];
-            //console.log(t)
-            let res = await getDayMatches(t);
-            if (res.length > 0) {
-                res = res.map((t) => t.title);
-                matches.push(res);
-            }
-        }
-        matches = matches.flat();
-        matches = await Promise.all(
-            matches.map(async (m) => {
-                let games = await getGamesFromMatchId(m.MatchId);
-                games = games.map((g) => g.title);
-                games = await Promise.all(
-                    games.map(async (g) => {
-                        let teams = await getTeamsFromGameId(g.GameId);
-                        teams = teams.map((t) => t.title);
-                        g.Teams = teams;
-                        teams = await Promise.all(
-                            teams.map(async (t) => {
-                                let players = await getPlayerFromGameId(t.GameId);
-                                players = players.map((p) => p.title);
-                                t.Players = players;
-                                return t;
-                            })
-                        );
-                        return g;
-                    })
-                );
-                m.Games = games;
-                return m;
-            })
-        );
-        //console.log(matches);
-        if (matches.length > 0) {
-            //console.log("DENTRO IF - ");
-            //console.log(matches);
-
-            allMatches.push(matches);
-            try {
-                matches.forEach((m) => {
-                    fs.mkdirSync(__dirname + "/data/matches/" + m.OverviewPage, { recursive: true });
-                    fs.writeFileSync(
-                        __dirname + "/data/matches/" + m.OverviewPage + "/" + m.Team1 + "-" + m.Team2 + ".json",
-                        JSON.stringify(m)
-                    );
-                });
-            } catch (error) {
-                console.log(error);
-            }
-        }
-    }
-
-    return allMatches.flat();
-};
 
 const daily = require("./utils/dailyTasks.js");
 daily();
@@ -190,6 +83,8 @@ const socketHandler = require("./socket/socketHandler.js");
 socketHandler(io);
 
 const { instrument } = require("@socket.io/admin-ui");
+const TeamPoints = require("./models/teampoints.js");
+const Partecipations = require("./models/partecipations.js");
 instrument(io, { auth: false });
 
 httpServer.listen(PORT, () => console.log("Server starting on port " + PORT));

@@ -4,8 +4,8 @@ const router = express.Router();
 const db = require("../database.js");
 
 const isLoggedIn = (req, res, next) => {
-    console.log("User: ");
-    console.log(req.user);
+    //console.log("User: ");
+    //console.log(req.user);
     if (req.isAuthenticated()) return next();
     return res.status(401).json({ error: "Not authenticated." });
 };
@@ -94,7 +94,7 @@ router.post("/send-invite", isLoggedIn, async (req, res) => {
     const id = req.user.id;
 
     try {
-        console.log({ body: req.body, id: id });
+        //console.log({ body: req.body, id: id });
         const result = await db.sendInvite({ body: req.body, id: id });
         //console.log(result);
         res.json(result);
@@ -117,7 +117,7 @@ router.get("/invites", isLoggedIn, async (req, res) => {
 
 router.post("/accept-invite", isLoggedIn, async (req, res) => {
     const id = req.body.id;
-    console.log(id);
+    //console.log(id);
 
     try {
         const result = await db.acceptInvite(id);

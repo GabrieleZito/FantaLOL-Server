@@ -101,11 +101,11 @@ exports.getDayMatches = async (t) => {
         "&join_on&limit=500&where=OverviewPage = '" +
         t +
         "'  AND DateTime_UTC>'" +
-        //yesterday +
-        "2025-02-01" +
+        yesterday +
+        //"2025-02-01" +
         "' AND DateTime_UTC<'" +
-        //today +
-        "2025-02-02" +
+        today +
+        //"2025-02-02" +
         "'&order_by=DateTime_UTC ASC&origin=*";
 
     return axios.get(query).then((res) => res.data.cargoquery);

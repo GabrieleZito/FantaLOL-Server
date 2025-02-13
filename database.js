@@ -642,7 +642,7 @@ exports.getUserTeam = async (userId, leadId) => {
                 },
             },
         });
-        console.log(part);
+        //console.log(part);
 
         return part;
     } catch (error) {
@@ -875,3 +875,78 @@ exports.setPoints = async (rule, player, data = 0) => {
         throw error;
     }
 };
+
+exports.getAllTeams = async () => {
+    try {
+        const teams = await Teams.findAll({
+            where: {},
+            include: {
+                model: Players,
+                through: {
+                    where: {
+                        active: true,
+                    },
+                },
+            },
+        });
+        return teams;
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+};
+
+exports.getTeamPoints = async (leadId, userId) => {
+    try {
+        console.log(leadId + " " + userId);
+
+        const part = await Partecipations.findOne({
+            where: {
+                UserProfileId: userId,
+                LeaderboardId: leadId,
+            },
+        });
+        const points = await Teams.findOne({
+            where: {
+                id: part.TeamId,
+            },
+            include: {
+                model: Points,
+                include: {
+                    model: Players,
+                },
+            },
+        });
+        return points;
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+};
+
+exports.getPartecipationByTeam = async (teamId) => {
+    try {
+        const part = await Partecipations.findOne({
+            where: {
+                TeamId: teamId,
+            },
+        });
+        return part;
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+};
+
+exports.createTeamPoints = async (PointId, TeamId) => {
+    try {
+        const tp = await TeamPoints.create({
+            PointId: PointId,
+            TeamId: TeamId,
+        });
+        return tp
+    } catch (error) {
+        console.log(error);
+        throw error
+    }
+}

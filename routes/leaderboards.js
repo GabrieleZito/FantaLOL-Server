@@ -9,7 +9,7 @@ const isLoggedIn = (req, res, next) => {
 
 router.post("/new", isLoggedIn, async (req, res) => {
     const opts = req.body;
-    console.log(opts);
+    //console.log(opts);
     try {
         const result = await db.createLeaderboard(opts);
         //const players =  av.(
@@ -73,6 +73,7 @@ router.get("/user/:id/friends", isLoggedIn, async (req, res) => {
 router.get("/:leadId/team", isLoggedIn, async (req, res) => {
     const { leadId } = req.params;
     const userId = req.user.id;
+    //console.log(leadId);
 
     try {
         const team = await db.getUserTeam(userId, leadId);
@@ -93,6 +94,20 @@ router.post("/:leadId/team", isLoggedIn, async (req, res) => {
     const result = await db.setActivePlayers(userId, leadId, team);
 
     res.json(result);
+});
+
+router.get("/:leadId/teamPoints", isLoggedIn, async (req, res) => {
+    const { leadId } = req.params;
+    const userId = req.user.id;
+    //console.log(leadId);
+
+    try {
+        const points = await db.getTeamPoints(leadId, userId);
+        res.json(points);
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ err: error });
+    }
 });
 
 module.exports = router;
