@@ -1,7 +1,9 @@
 # FantaLoL Backend
+
 Server used for the FantaLoL client
 
 # Tech Stack
+
 - Express for the server
 - Socket.io for WebSockets
 - SQLite for the database
@@ -9,7 +11,9 @@ Server used for the FantaLoL client
 - Passport for authentication
 
 # Endpoints
+
 ### Users
+
 - `POST /users/:id/request` - Send a friend request to the user
 - `GET /users/notifications` - Get all the notifications(friend, invite) of the logged user
 - `POST /users/acceptFriend` - Accept friend request
@@ -19,6 +23,7 @@ Server used for the FantaLoL client
 - `POST /users/accept-invite` - Accept the invite to join a leaderboard
 
 ### Leaderboards
+
 - `POST /leaderboards/new` - Create a new leaderboard
 - `GET /leaderboards/:id` - Get a specific leaderboard
 - `GET /leaderboards/user/:id` - Get a all the leaderboards that the user has created
@@ -27,10 +32,21 @@ Server used for the FantaLoL client
 - `GET /leaderboards/:id/team` - Get a all the players that the user owns for the specific leaderboard
 
 ### Auth
+
 - `POST /auth/register` - Register a new user
 - `POST /auth/login` - Login a user
 - `DELETE /auth/logout` - Logout a user
 
 ### Leagues
+
 - `GET /league/tournaments/currentTournaments` - Get all the tournaments of the year
 - `GET /league/currentLeagues` - Get the Leagues to which tournaments belong
+
+## Database
+
+<details>
+<summary> Logical Model</summary>
+
+![image](db.png)
+
+</details>
