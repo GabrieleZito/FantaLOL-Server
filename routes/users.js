@@ -127,4 +127,17 @@ router.post("/accept-invite", isLoggedIn, async (req, res) => {
     }
 });
 
+router.post("/editProfile", isLoggedIn, async (req, res) => {
+    const user = req.body;
+    const userId = req.user.id;
+    //console.log(user);
+
+    try {
+        const result = await db.editUserProfile(userId, user);
+        res.json(result);
+    } catch (error) {
+        res.status(400).json({ err: error });
+    }
+});
+
 module.exports = router;

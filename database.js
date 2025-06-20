@@ -944,9 +944,21 @@ exports.createTeamPoints = async (PointId, TeamId) => {
             PointId: PointId,
             TeamId: TeamId,
         });
-        return tp
+        return tp;
     } catch (error) {
         console.log(error);
-        throw error
+        throw error;
     }
-}
+};
+
+exports.editUserProfile = async (userId, data) => {
+    try {
+        const user = await UserProfile.findByPk(userId);
+        const update = await user.update({ firstName: data.firstName, lastName: data.lastName, bio: data.bio });
+        const result = await user.save();
+        return result;
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+};
